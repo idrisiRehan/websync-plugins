@@ -1,0 +1,62 @@
+{
+  "name": "websync-validators",
+  "version": "1.0.0",
+  "description": "Offline check-digit validators for EU/UK VAT numbers, IBANs (89 countries), Australian ABN/ACN, US ABA routing numbers and Indian GSTINs. Zero dependencies, reports which check failed.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "vat",
+    "vat-number",
+    "vies",
+    "iban",
+    "iban-validator",
+    "abn",
+    "acn",
+    "australia",
+    "routing-number",
+    "aba",
+    "gstin",
+    "gst",
+    "india",
+    "check-digit",
+    "checksum",
+    "validation",
+    "validator"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://websync.in/tools/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-validators.git"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-validators/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}
