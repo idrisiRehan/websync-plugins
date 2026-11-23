@@ -30,3 +30,9 @@ export type { RoutingCheck, RoutingResult } from "./routing.ts";
 
 export { validateGstin, normalizeGstin, computeCheckDigit as gstinCheckDigit, withCheckDigit as withGstinCheckDigit, STATE_CODES as GSTIN_STATE_CODES } from "./gstin.ts";
 export type { GstinCheck, GstinResult } from "./gstin.ts";
+
+export { validateGtin, isValidGtin, gtinCheckDigit, convertGtin, normalizeGtin, GTIN_LENGTHS } from "./gtin.ts";
+export type { Conversion, GtinCheck, GtinResult, GtinType } from "./gtin.ts";
+
+export { validateIsbn, isValidIsbn, isbn10CheckDigit, isbn10To13, isbn13To10, normalizeIsbn } from "./isbn.ts";
+export type { IsbnCheck, IsbnKind, IsbnResult } from "./isbn.ts";

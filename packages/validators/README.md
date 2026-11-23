@@ -7,6 +7,7 @@ Offline validators for business and bank identifiers, with check-digit maths for
 - **Australian ABNs and ACNs**
 - **US ABA routing numbers**
 - **Indian GSTINs**
+- **GTINs** (GTIN-8, UPC-A, EAN-13, GTIN-14) and **ISBNs** (ISBN-10, ISBN-13), with conversion between forms
 
 Each validator returns a list of individual checks (format, length, check digits and so on), each marked `pass`, `fail` or `skipped`. You can tell a user *what* is wrong, not just that something is.
 
@@ -106,6 +107,41 @@ r.pan;            // "AAPFU0939F"
 r.panHolderType;  // the holder type encoded in the PAN's 4th letter
 ```
 
+### GTINs (barcodes: EAN-13, UPC-A, GTIN-8, GTIN-14)
+
+```ts
+import { validateGtin, convertGtin, gtinCheckDigit } from "websync-validators";
+
+const r = validateGtin("4006381333931");
+r.valid;   // true
+r.type;    // "GTIN-13" (from the length: 8, 12, 13 or 14)
+r.gtin14;  // "04006381333931", the same product as a 14-digit key
+
+convertGtin("036000291452", "GTIN-13");     // { ok: true, value: "0036000291452" }
+convertGtin("4006381333931", "GTIN-12");    // { ok: false, error: "... without losing significant digits." }
+convertGtin("4006381333931", "GTIN-14", 1); // packaging indicator 1: { ok: true, value: "14006381333938" }
+gtinCheckDigit("400638133393");             // "1"
+```
+
+Leading zeros never change a GS1 check digit, so converting between lengths only adds or
+removes zeros. `convertGtin` refuses a conversion that would drop a non-zero digit.
+
+### ISBNs
+
+```ts
+import { validateIsbn, isbn10To13, isbn13To10 } from "websync-validators";
+
+const r = validateIsbn("0-306-40615-2");
+r.kind;    // "ISBN-10"
+r.valid;   // true
+r.isbn13;  // "9780306406157"
+
+isbn13To10("9780306406157"); // { ok: true, value: "0306406152" }
+```
+
+ISBN-13s must start with 978 or 979. Only 978 ISBNs have an ISBN-10 form, so `isbn10` is
+`null` for a 979 ISBN.
+
 ## What a pass means, and what it doesn't
 
 Every check here is arithmetic on the characters, so a pass means the identifier is **well formed**. It does not mean the identifier was issued, is active, or belongs to who you think. For that, use the official registers:
@@ -114,6 +150,8 @@ Every check here is arithmetic on the characters, so a pass means the identifier
 - **ABNs:** ABN Lookup
 - **GSTINs:** the GST portal
 - **IBANs and routing numbers:** the bank
+- **GTINs:** GS1 (Verified by GS1)
+- **ISBNs:** the national ISBN agency
 
 Validate offline first to catch typos instantly, then confirm with the register when it matters.
 
@@ -123,6 +161,7 @@ Validate offline first to catch typos instantly, then confirm with the register 
 - **IBAN layouts** follow the current SWIFT IBAN Registry: 89 countries, including Honduras and Yemen.
 - **ABN and ACN checks** follow the ATO's and ASIC's published algorithms.
 - **Routing number checks** follow the ABA checksum and prefix ranges.
+- **GTIN check digits** follow the GS1 General Specifications. **ISBN-10** follows ISO 2108. The tests use the published examples from GS1 and Wikipedia.
 
 ## License
 

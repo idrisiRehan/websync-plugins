@@ -6,9 +6,21 @@ All notable changes to `websync-validators` are recorded here. The format follow
 
 ## [Unreleased]
 
+## [1.1.0] - Unreleased (ready, awaiting publish approval)
+
+### Added
+
+- `validateGtin`, `isValidGtin`, `gtinCheckDigit`, `convertGtin` and `normalizeGtin` for
+  GTIN-8, GTIN-12 (UPC-A), GTIN-13 (EAN-13) and GTIN-14, including GS1 packaging indicator
+  digits. Ported from the GTIN Converter on websync.in. A differential test over 200,000
+  inputs gave the same results as the site.
+- `validateIsbn`, `isValidIsbn`, `isbn10CheckDigit`, `isbn10To13`, `isbn13To10` and
+  `normalizeIsbn`.
+
 ### Changed
 
-- Moved into the `websync-plugins` monorepo (`packages/validators`). The published API is unchanged.
+- Moved into the `websync-plugins` monorepo (`packages/validators`). Existing exports are
+  unchanged.
 
 ## [1.0.0] - 2026-11-21
 

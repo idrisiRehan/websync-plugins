@@ -2,6 +2,25 @@
 
 Newest first. Decisions, milestones, discoveries and problems.
 
+## 2026-11-24 (later): websync-validators 1.1.0 (R-3)
+
+- Added GTIN (8/12/13/14, conversion, packaging indicator) and ISBN (10/13, conversion). The
+  logic was ported from the site's `lib/gtin.ts`, using the package's `checks[]` result
+  shape, so callers see which check failed, the same as the other validators.
+- API differences from the site, made deliberately: `gtinCheckDigit` returns `string | null`
+  (null for non-digit input) instead of a number, matching `routingCheckDigit`. Conversion
+  errors reuse the failing check's message. ASIN shape checks stay in the site: they are
+  format-only and Amazon-specific.
+- Verification: 37 new tests built on published GS1 and Wikipedia examples, plus
+  single-digit-mutation sweeps. A scratch differential test of site vs package over 200,000
+  generated inputs (validate, convert to all four lengths with and without indicators, and
+  ISBN conversion both ways) found 0 mismatches.
+- Housekeeping: converted the imported files' working-tree line endings from CRLF to LF
+  (`.gitattributes` enforces LF) and removed the package's own `.gitignore`, which repeated
+  the root one.
+- `npm run check`: 404 tests pass. Pack: security-header-audit 26 files (28.7 kB),
+  websync-validators 49 files (50.8 kB).
+
 ## 2026-11-24: Stage 0 audit, Stage 1 foundation, Stage 2 first package
 
 ### Done
@@ -23,7 +42,7 @@ Newest first. Decisions, milestones, discoveries and problems.
   pairs, any case), `rating`, `parseRawHeaders()` for curl output, and a CLI with `--json`,
   `--min-score`, `--raw` and `--timeout`. 109 tests, including CLI end-to-end tests against a
   local HTTP server.
-- **Release check:** `npm pack` produced 22 files (25.6 kB). Installed the tarball in a clean
+- **Release check:** `npm pack` produced 22 files (25.6 kB) before `examples/` was added. Installed the tarball in a clean
   project, then imported the library and ran the installed CLI against https://websync.in/.
 - **CI** (Node 22 and 24: check, pack, audit), a tag-driven **release** workflow with npm
   provenance, Dependabot, and issue and PR templates.

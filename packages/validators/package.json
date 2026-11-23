@@ -1,7 +1,7 @@
 {
   "name": "websync-validators",
-  "version": "1.0.0",
-  "description": "Offline check-digit validators for EU/UK VAT numbers, IBANs (89 countries), Australian ABN/ACN, US ABA routing numbers and Indian GSTINs. Zero dependencies, reports which check failed.",
+  "version": "1.1.0",
+  "description": "Offline check-digit validators for EU/UK VAT numbers, IBANs (89 countries), Australian ABN/ACN, US ABA routing numbers, Indian GSTINs, GTIN/EAN/UPC barcodes and ISBNs. Zero dependencies, reports which check failed.",
   "type": "module",
   "exports": {
     ".": {
@@ -44,7 +44,15 @@
     "check-digit",
     "checksum",
     "validation",
-    "validator"
+    "validator",
+    "gtin",
+    "ean",
+    "ean-13",
+    "upc",
+    "barcode",
+    "isbn",
+    "isbn-10",
+    "isbn-13"
   ],
   "author": "Rehan Idrisi (https://websync.in/about/)",
   "license": "MIT",

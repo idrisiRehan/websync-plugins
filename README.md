@@ -6,7 +6,7 @@ code, tests and pipelines.
 
 | Package | What it does | Web tool |
 |---|---|---|
-| [`websync-validators`](packages/validators) | Offline check-digit validation for EU/UK VAT numbers, IBANs (89 countries), Australian ABN/ACN, US routing numbers and Indian GSTINs. Reports which check failed. | [VAT](https://websync.in/tools/vat-number-checker/), [IBAN](https://websync.in/tools/iban-validator/), [ABN](https://websync.in/tools/abn-validator/), [routing](https://websync.in/tools/routing-number-validator/), [GSTIN](https://websync.in/tools/gstin-validator/) |
+| [`websync-validators`](packages/validators) | Offline check-digit validation for EU/UK VAT numbers, IBANs (89 countries), Australian ABN/ACN, US routing numbers, Indian GSTINs, GTIN/EAN/UPC barcodes and ISBNs. Reports which check failed. | [VAT](https://websync.in/tools/vat-number-checker/), [IBAN](https://websync.in/tools/iban-validator/), [ABN](https://websync.in/tools/abn-validator/), [routing](https://websync.in/tools/routing-number-validator/), [GSTIN](https://websync.in/tools/gstin-validator/), [GTIN](https://websync.in/tools/gtin-converter/), [ISBN](https://websync.in/tools/isbn-asin-validator/) |
 | [`security-header-audit`](packages/security-header-audit) | Grades HTTP security headers (HSTS, CSP, clickjacking, nosniff, Referrer-Policy, Permissions-Policy) offline, with a CLI for CI. | [Security Header Checker](https://websync.in/tools/security-header-checker/) |
 
 Every package is zero-dependency, TypeScript, ESM, and makes no network calls in its library
