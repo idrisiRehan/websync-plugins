@@ -1,0 +1,60 @@
+{
+  "name": "security-header-audit",
+  "version": "1.0.0",
+  "description": "Grade HTTP security headers (HSTS, CSP, X-Content-Type-Options, clickjacking, Referrer-Policy, Permissions-Policy) offline, with spec-cited reasons. Zero dependencies, plus a CLI for CI.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "security-header-audit": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "security-headers",
+    "http-headers",
+    "csp",
+    "content-security-policy",
+    "hsts",
+    "strict-transport-security",
+    "x-frame-options",
+    "clickjacking",
+    "referrer-policy",
+    "permissions-policy",
+    "security",
+    "audit",
+    "cli"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://websync.in/tools/security-header-checker/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/security-header-audit"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  }
+}

@@ -1,0 +1,40 @@
+name: Bug report
+description: A wrong result, a crash, or behaviour that doesn't match the docs
+labels: [bug]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - websync-validators
+        - security-header-audit
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: input
+    attributes:
+      label: Input
+      description: The exact input (identifier, headers, command). Remove anything private.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual result
+      description: What you expected, what you got, and a source for the expected result if there is one (spec, registry, official checker).
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: Runtime
+      placeholder: "Node 24.1, Chrome 140, Cloudflare Workers ..."

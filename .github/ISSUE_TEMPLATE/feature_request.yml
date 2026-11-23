@@ -1,0 +1,25 @@
+name: Feature request
+description: A new check, country, format or option
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - websync-validators
+        - security-header-audit
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, and why doesn't the package do it today?
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Specification or source
+      description: Link to the spec, registry or official algorithm the feature should follow.

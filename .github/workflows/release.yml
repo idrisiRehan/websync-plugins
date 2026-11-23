@@ -1,0 +1,42 @@
+# Publishes one package to npm when a tag named <package-name>@<version> is pushed, for example
+# security-header-audit@1.0.0. Uses npm trusted publishing (OIDC): no token is stored, but each
+# package must first be linked to this repository and workflow on npmjs.com.
+name: Release
+
+on:
+  push:
+    tags: ["*@*"]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run check
+      - name: Resolve package from tag
+        id: pkg
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          NAME="${TAG%@*}"
+          VERSION="${TAG##*@}"
+          DIR=$(node -e 'const fs=require("fs");const n=process.argv[1];for(const d of fs.readdirSync("packages")){const p=JSON.parse(fs.readFileSync(`packages/${d}/package.json`));if(p.name===n){console.log(`packages/${d}`);process.exit(0)}}process.exit(1)' "$NAME")
+          ACTUAL=$(node -p "require('./$DIR/package.json').version")
+          if [ "$ACTUAL" != "$VERSION" ]; then echo "Tag says $VERSION, $DIR/package.json says $ACTUAL"; exit 1; fi
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+      - run: npm publish --provenance --access public
+        working-directory: ${{ steps.pkg.outputs.dir }}
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "See ${{ steps.pkg.outputs.dir }}/CHANGELOG.md"
