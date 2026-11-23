@@ -1,0 +1,25 @@
+{
+  "name": "websync-plugins",
+  "private": true,
+  "description": "WebSync's open-source developer packages: offline validators and diagnostics that also power the tools on websync.in.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm test --workspaces",
+    "typecheck": "tsc -p tsconfig.json",
+    "check:text": "node scripts/check-text.mjs",
+    "check:pack": "npm pack --dry-run --workspaces",
+    "check": "npm run check:text && npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}

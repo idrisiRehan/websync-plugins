@@ -15,6 +15,7 @@
     "dist",
     "src",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "sideEffects": false,
@@ -50,13 +51,10 @@
   "homepage": "https://websync.in/tools/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/idrisiRehan/websync-validators.git"
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/validators"
   },
   "bugs": {
-    "url": "https://github.com/idrisiRehan/websync-validators/issues"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.9.3"
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
   }
 }
