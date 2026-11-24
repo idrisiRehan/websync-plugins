@@ -1,0 +1,21 @@
+Disallow: /tmp/
+
+User-agent: *
+Disalow: /cart/
+Disallow /checkout/
+Disallow: account/
+Allow: /private/
+Disallow: /private/
+Crawl-delay: 10
+Noindex: /drafts/
+Dsallow: /old/
+
+User-agent: Googlebot/2.1
+Disallow: https://shop.example.com/admin/
+Disallow: /*.js$
+Block the staging pages too
+
+User-agent: *
+Disallow: /
+
+Sitemap: /sitemap.xml

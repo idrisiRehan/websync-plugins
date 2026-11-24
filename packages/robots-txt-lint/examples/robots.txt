@@ -1,0 +1,19 @@
+# robots.txt for https://shop.example.com
+
+User-agent: *
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /account/
+Disallow: /*?sort=
+Allow: /account/help/
+
+# Keep pages out of AI model training, but stay in AI search and answers.
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: meta-externalagent
+User-agent: CCBot
+Disallow: /
+
+Sitemap: https://shop.example.com/sitemap.xml
