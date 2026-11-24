@@ -25,6 +25,9 @@ All notable changes to `product-feed-lint` are recorded here. The format follows
   `TRUE`/`FALSE` sub-attributes are checked; `merchant_item_id` and `consumer_notice` are known.
 - Google feeds may use `structured_title` and `structured_description` in place of `title` and
   `description`, and may repeat a text column to add values.
+- `readFeedItems()`: the feed's items with their attribute values, read with the same readers,
+  format rules and aliases as `lintProductFeed()`, plus the reading findings. A building block
+  for `feed-page-check`.
 - `product-feed-lint` CLI for files, stdin and URLs, with `--target`, `--format`, `--json`,
   `--max-warnings` and `--timeout`, UTF-8 and UTF-16 input, and a 100 MB read cap enforced while
   reading.

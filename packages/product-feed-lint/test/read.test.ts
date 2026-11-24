@@ -2,7 +2,7 @@
 
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { detectFormat, lintProductFeed } from "../src/index.ts";
+import { detectFormat, lintProductFeed, readFeedItems } from "../src/index.ts";
 import { GOOGLE_ITEM, OPENAI_ITEM, csv, jsonl, lint, rss, rules, tsv } from "./helpers.ts";
 
 const G = "http://base.google.com/ns/1.0";
@@ -249,6 +249,58 @@ ${entry}
   test("g: versions of the Atom elements also count", () => {
     const text = atom(entry.replace("<summary>A blue ceramic mug.</summary>", "<g:description>A blue ceramic mug.</g:description>"));
     assert.deepEqual(lint(text).findings, []);
+  });
+});
+
+describe("readFeedItems", () => {
+  const plain = (attributes: Record<string, string[]>) => ({ ...attributes });
+
+  test("reads each item's id, line and attribute values, the same way in every Google format", () => {
+    for (const text of [tsv([GOOGLE_ITEM, { ...GOOGLE_ITEM, id: "MUG-2" }]), rss([GOOGLE_ITEM, { ...GOOGLE_ITEM, id: "MUG-2" }])]) {
+      const result = readFeedItems(text);
+      assert.equal(result.target, "google");
+      assert.deepEqual(result.findings, []);
+      assert.deepEqual(result.items.map((i) => i.id), ["MUG-1", "MUG-2"]);
+      assert.deepEqual(plain(result.items[0].attributes), Object.fromEntries(Object.entries(GOOGLE_ITEM).map(([k, v]) => [k, [v]])));
+    }
+    assert.deepEqual(readFeedItems(tsv([GOOGLE_ITEM])).items[0].line, 2);
+    assert.equal(readFeedItems(rss([GOOGLE_ITEM])).format, "xml");
+  });
+
+  test("resolves aliases and spellings like the linter, and reports the alias once", () => {
+    const google = readFeedItems(`ID\tPrice\tAvailability\nA\t12.00 USD\tin stock\n`);
+    assert.deepEqual(plain(google.items[0].attributes), { id: ["A"], price: ["12.00 USD"], availability: ["in stock"] });
+    const openai = readFeedItems(jsonl([{ ...OPENAI_ITEM, item_id: undefined, id: "X", item_group_id: "G" }]), { target: "openai" });
+    assert.equal(openai.items[0].id, "X");
+    assert.deepEqual(openai.items[0].attributes.group_id, ["G"]);
+    const both = readFeedItems(jsonl([{ ...OPENAI_ITEM, id: "X" }]), { target: "openai" });
+    assert.equal(both.items[0].id, "MUG-1");
+    assert.deepEqual(both.findings.map((f) => f.rule), ["attribute-alias"]);
+  });
+
+  test("repeated elements and columns add values; empty values are left out", () => {
+    const repeated = readFeedItems(`id\tgtin\tgtin\tcolor\nA\t4006381333931\t5901234123457\t\n`);
+    assert.deepEqual(plain(repeated.items[0].attributes), { id: ["A"], gtin: ["4006381333931", "5901234123457"] });
+  });
+
+  test("reading problems are findings; value problems are not", () => {
+    assert.deepEqual(readFeedItems(tsv([{ ...GOOGLE_ITEM, price: "$1" }])).findings, []);
+    assert.deepEqual(readFeedItems("").findings.map((f) => f.rule), ["feed-empty"]);
+    const broken = readFeedItems("<rss><channel><item>");
+    assert.deepEqual([broken.format, broken.items.length, broken.findings[0].rule], ["xml", 0, "feed-unreadable"]);
+    assert.deepEqual(readFeedItems("id,price\nA,1 USD\n").findings.map((f) => f.rule), ["delimiter-wrong"]);
+  });
+
+  test("attribute names can't reach Object.prototype", () => {
+    const { attributes } = readFeedItems(`id\t__proto__\tconstructor\nA\tx\ty\n`).items[0];
+    assert.equal(Object.getPrototypeOf(attributes), null);
+    assert.deepEqual(attributes.constructor, ["y"]);
+    assert.equal(attributes.toString, undefined);
+  });
+
+  test("throws a TypeError for invalid options, like lintProductFeed()", () => {
+    assert.throws(() => readFeedItems("x", { target: "bing" as never }), TypeError);
+    assert.throws(() => readFeedItems("x", { format: "jsonl" }), TypeError);
   });
 });
 

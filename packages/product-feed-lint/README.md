@@ -194,6 +194,43 @@ Also exported: `detectFormat(text)`, and the requirement tables `GOOGLE_ATTRIBUT
 `OPENAI_ATTRIBUTES` (each entry has `name`, the checks, `source` and `checked`), for tools that
 want to show what is checked and why.
 
+### Reading items
+
+`readFeedItems()` reads a feed the way `lintProductFeed()` does (same readers, format detection
+and attribute aliases) and returns the values instead of the checks, for tools that work with
+the products themselves, such as
+[feed-page-check](https://github.com/idrisiRehan/websync-plugins/tree/main/packages/feed-page-check):
+
+```ts
+import { readFeedItems } from "product-feed-lint";
+
+const { format, items, findings } = readFeedItems(text, { target: "google" });
+items[0]; // { id: "MUG-1", line: 2, attributes: { id: ["MUG-1"], price: ["12.00 USD"], ... } }
+```
+
+```ts
+function readFeedItems(text: string, options?: LintOptions): FeedItemsResult;
+
+interface FeedItemsResult {
+  target: "google" | "openai";
+  format: "tsv" | "csv" | "xml" | "jsonl" | null; // null for an empty feed
+  items: FeedItem[];
+  findings: FeedFinding[];                 // reading problems only: empty or unreadable feed,
+                                           // wrong format or delimiter, quoting, row widths, aliases
+}
+
+interface FeedItem {
+  id: string | null;                       // id (google) or item_id (openai)
+  line: number;                            // row for TSV and CSV, line for XML and JSONL
+  attributes: Record<string, string[]>;    // trimmed values by documented name (aliases resolved;
+                                           // Google names lower-cased, spaces as underscores);
+                                           // empty values left out; null prototype
+}
+```
+
+Values are as written: `readFeedItems()` doesn't check them, so run `lintProductFeed()` for that.
+It throws a `TypeError` for the same invalid options as `lintProductFeed()`.
+
 ### JSON output
 
 The CLI's `--json` output is the result with a `source` field added:

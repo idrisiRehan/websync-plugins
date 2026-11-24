@@ -19,6 +19,10 @@ All notable changes to `schemaview` are recorded here. The format follows
   features checked against it.
 - A declarative rule table (`RICH_RESULT_TYPES`) for 18 Google rich-result features, plus
   five deprecated ones, each with its Search Central source, checked on 2026-11-24.
+- `readProducts()`: the Product, ProductGroup and Offer data in a page's JSON-LD as values
+  (identifiers, offers, AggregateOffer ranges, price specifications with their `priceType` and
+  whether they are member prices, availability, variant groups), with lines and paths, read the same way as `validateStructuredData()` reads JSON-LD.
+  A building block for `feed-page-check`.
 - A strict JSON parser that keeps line numbers, so JSON errors point at the line in the page.
 - `schemaview` CLI for files, stdin and URLs, with a 10 MB read cap, `--json`,
   `--max-warnings` and `--timeout`.

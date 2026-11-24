@@ -2,6 +2,7 @@
 // (from the table in rich-results.ts) and value formats. Pure and offline.
 
 import { extractJsonLd } from "./extract.ts";
+import { childPath, idOf, index, propertyOf, SCHEMA_ORG_PREFIX, typesOf, valuesOf, type Graph } from "./graph.ts";
 import { parseJson, type JsonNode, type JsonObject } from "./json.ts";
 import { RICH_RESULT_TYPES, VALUE_FORMATS, type Shape, type ValueFormat } from "./rich-results.ts";
 
@@ -83,11 +84,9 @@ interface Missing {
   requirement: string;
 }
 
-interface Context {
+interface Context extends Graph {
   report: Report;
   base: URL | undefined;
-  paths: Map<JsonNode, string>;
-  ids: Map<string, JsonObject[]>;
   /** Values that satisfy a required property, so a bad format there is an error. */
   requiredValues: Set<JsonNode>;
   /** Missing properties per node, keyed by requirement, so two features share one finding. */
@@ -103,14 +102,9 @@ interface Problem {
 }
 
 const SCHEMA_ORG = /^https?:\/\/schema\.org\/?$/;
-const SCHEMA_ORG_PREFIX = /^(?:https?:\/\/schema\.org\/|schema:)/;
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:[.,]\d+)?)?(?:Z|[+-](\d{2})(?::?(\d{2}))?)?)?$/;
 const ISO_DURATION = /^P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+W)?(?:\d+D)?(?:T(?=\d)(?:\d+H)?(?:\d+M)?(?:\d+(?:[.,]\d+)?S)?)?$/;
 const PLAIN_NUMBER = /^\d+(?:\.\d+)?$/;
-
-function childPath(path: string, key: string): string {
-  return /^[A-Za-z_$][\w$]*$/.test(key) ? `${path}.${key}` : `${path}[${JSON.stringify(key)}]`;
-}
 
 function joinList(items: string[], word: "and" | "or"): string {
   return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} ${word} ${items.at(-1)}`;
@@ -134,24 +128,6 @@ function sameValue(a: JsonNode, b: JsonNode): boolean {
   return b.kind === a.kind && "value" in b && b.value === a.value;
 }
 
-function isReference(node: JsonObject): boolean {
-  return node.props.size === 1 && node.props.get("@id")?.kind === "string";
-}
-
-function idOf(node: JsonObject): string | null {
-  const id = node.props.get("@id");
-  return id?.kind === "string" ? id.value : null;
-}
-
-/** The node's @type values without a schema.org prefix, or null when @type is malformed. */
-function typesOf(node: JsonObject): string[] | null {
-  const type = node.props.get("@type");
-  if (!type) return [];
-  const items = type.kind === "array" ? type.items : [type];
-  const types = items.map((item) => (item.kind === "string" ? item.value.trim().replace(SCHEMA_ORG_PREFIX, "") : ""));
-  return types.length && types.every(Boolean) ? types : null;
-}
-
 function isSchemaOrgContext(node: JsonNode): boolean {
   if (node.kind === "string") return SCHEMA_ORG.test(node.value.trim());
   if (node.kind === "array") return node.items.some(isSchemaOrgContext);
@@ -160,42 +136,6 @@ function isSchemaOrgContext(node: JsonNode): boolean {
     return vocab?.kind === "string" && SCHEMA_ORG.test(vocab.value.trim());
   }
   return false;
-}
-
-/** Records every node's path and indexes nodes that define an @id. @context is not data. */
-function index(ctx: Context, node: JsonNode, path: string): void {
-  ctx.paths.set(node, path);
-  if (node.kind === "array") node.items.forEach((item, i) => index(ctx, item, `${path}[${i}]`));
-  if (node.kind !== "object") return;
-  const id = idOf(node);
-  if (id !== null && !isReference(node) && [...node.props.keys()].some((k) => k !== "@id" && k !== "@context")) {
-    const list = ctx.ids.get(id);
-    if (list) list.push(node);
-    else ctx.ids.set(id, [node]);
-  }
-  for (const [key, value] of node.props) {
-    if (key !== "@context") index(ctx, value, childPath(path, key));
-  }
-}
-
-/** A property of the node, or of another node with the same @id: JSON-LD merges them. */
-function propertyOf(ctx: Context, node: JsonObject, key: string): JsonNode | undefined {
-  const own = node.props.get(key);
-  const id = idOf(node);
-  if (own || id === null) return own;
-  return ctx.ids.get(id)?.find((other) => other.props.has(key))?.props.get(key);
-}
-
-/** Present values of a property: arrays flattened, @id references resolved, empty values dropped. */
-function valuesOf(ctx: Context, node: JsonObject, key: string): JsonNode[] {
-  const value = propertyOf(ctx, node, key);
-  if (!value) return [];
-  const out: JsonNode[] = [];
-  for (const item of value.kind === "array" ? value.items : [value]) {
-    if (item.kind === "null" || (item.kind === "string" && !item.value.trim()) || (item.kind === "array" && !item.items.length)) continue;
-    out.push(item.kind === "object" && isReference(item) ? (ctx.ids.get(idOf(item)!)?.[0] ?? item) : item);
-  }
-  return out;
 }
 
 function resolvePath(ctx: Context, node: JsonObject, segments: string[]): JsonNode[] {

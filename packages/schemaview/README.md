@@ -151,6 +151,62 @@ Input that starts with `{` or `[` (after whitespace or a BOM) is read as JSON-LD
 as HTML. The function is pure: no network, no filesystem. An invalid `options.url` throws a
 `TypeError`. The rule table is exported as `RICH_RESULT_TYPES`.
 
+### Reading Product data
+
+`readProducts()` returns the Product and Offer data in the JSON-LD as values, for tools that
+compare it with something else, such as
+[feed-page-check](https://github.com/idrisiRehan/websync-plugins/tree/main/packages/feed-page-check),
+which compares it with a product feed. It uses the same JSON-LD reading as
+`validateStructuredData()` (every script, `@graph`, `@id` references across scripts, nodes
+merged by `@id`) and checks nothing.
+
+```ts
+import { readProducts } from "schemaview";
+
+const { products } = readProducts(html);
+products[0].offers[0]; // { types: ["Offer"], price: "12.00", priceCurrency: "USD", availability: "InStock", ... }
+```
+
+```ts
+function readProducts(input: string): ProductsResult;
+
+interface ProductsResult {
+  format: "html" | "json";
+  blockCount: number;
+  unreadableBlockCount: number; // empty or invalid JSON scripts, which search engines ignore
+  otherSyntax: boolean;         // Microdata or RDFa attributes are present (not read)
+  products: ProductData[];      // every Product, ProductGroup or Product subtype, in document order
+}
+
+interface ProductData {
+  types: string[]; id: string | null; name: string | null;
+  sku: string | null; gtins: string[]; mpn: string | null; url: string | null;
+  productGroupID: string | null; // a group's productGroupID, or a variant's group ID
+  group: { id: string | null; productGroupID: string | null; line: number; path: string } | null;
+  offers: OfferData[];          // an AggregateOffer's own offers follow it
+  line: number; path: string;
+}
+
+interface OfferData {
+  types: string[];              // ["Offer"], ["AggregateOffer"]
+  price: string | null;         // as written; a JSON number in its shortest form (18.00 is "18")
+  priceCurrency: string | null;
+  lowPrice: string | null; highPrice: string | null;
+  availability: string | null;  // without the schema.org prefix: "InStock"
+  priceSpecifications: { types: string[]; price: string | null; priceCurrency: string | null;
+    priceType: string | null; memberPrice: boolean; // validForMemberTier is set
+    validFrom: string | null; validThrough: string | null; line: number; path: string }[];
+  url: string | null; sku: string | null; gtins: string[]; mpn: string | null;
+  validFrom: string | null; validThrough: string | null; priceValidUntil: string | null;
+  line: number; path: string;
+}
+```
+
+Variants are products too: a `ProductGroup`'s `hasVariant` entries, and products that point to
+their group with `isVariantOf`, carry that group in `group`. Products under `isRelatedTo`,
+`isSimilarTo`, `isAccessoryOrSparePartFor`, `isConsumableFor` or an offer's `itemOffered` are
+other products, so they aren't listed. Never throws.
+
 ## Supported rich results
 
 Data checked against Google Search Central on **2026-11-24**. A dotted name like `author.name`

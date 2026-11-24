@@ -5,7 +5,7 @@
 
 import { GOOGLE } from "./google.ts";
 import { OPENAI } from "./openai.ts";
-import { detectFormat, read } from "./read.ts";
+import { detectFormat, read, type ReadResult } from "./read.ts";
 import type { AttributeSpec, FeedFormat, Field, Item, Report, RuleId, Severity, Target, TargetName } from "./spec.ts";
 import { charLength, checkField, enumMatches, listEntries } from "./values.ts";
 
@@ -48,6 +48,10 @@ interface Compiled {
   /** Alias name to the name it stands for. */
   aliases: Map<string, string>;
   required: AttributeSpec[];
+  /** Maps an attribute name as written to the name the target uses. */
+  normalize(name: string): string;
+  /** True when a normalized name is an attribute of the target or an alias of one. */
+  isKnown(name: string): boolean;
   conditional: AttributeSpec[];
   unique: AttributeSpec[];
 }
@@ -60,7 +64,9 @@ function compile(target: Target): Compiled {
     const specs = new Map(target.attributes.map((a) => [a.name, a]));
     const aliases = new Map(target.attributes.flatMap((a) => (a.aliases ?? []).map((alias) => [alias, a.name] as const)));
     const list = target.attributes;
-    c = { target, specs, aliases, required: list.filter((a) => a.required), conditional: list.filter((a) => a.requiredWhen), unique: list.filter((a) => a.unique) };
+    const normalize = target.strict ? (name: string) => name.trim() : (name: string) => name.trim().toLowerCase().replace(/ +/g, "_");
+    const isKnown = (name: string) => specs.has(name) || aliases.has(name);
+    c = { target, specs, aliases, normalize, isKnown, required: list.filter((a) => a.required), conditional: list.filter((a) => a.requiredWhen), unique: list.filter((a) => a.unique) };
     compiled.set(target.name, c);
   }
   return c;
@@ -103,6 +109,127 @@ function checkOptions(options: LintOptions): { target: Target; format: FeedForma
   return { target: spec, format };
 }
 
+/** One product as read from the feed, before any value is checked. */
+export interface FeedItem {
+  /** The item's id (google) or item_id (openai), or null. */
+  id: string | null;
+  /** Spreadsheet row for TSV and CSV (the header is row 1), source line for XML and JSONL. */
+  line: number;
+  /**
+   * Trimmed values by attribute name, with aliases resolved to the name the target documents
+   * (item_group_id is group_id for openai). Repeated elements or columns add values; empty
+   * values are left out. A null-prototype object, so any attribute name is safe to look up.
+   */
+  attributes: Record<string, string[]>;
+}
+
+export interface FeedItemsResult {
+  target: TargetName;
+  /** The format read, or null when the feed is empty. */
+  format: FeedFormat | null;
+  items: FeedItem[];
+  /**
+   * What reading reported: an empty or unreadable feed, a format or delimiter the target doesn't
+   * take, broken quoting, row widths, aliases. Value checks are lintProductFeed()'s job.
+   */
+  findings: FeedFinding[];
+}
+
+interface FeedRead {
+  format: FeedFormat | null;
+  header: ReadResult["header"];
+  atom: boolean;
+  items: Item[];
+}
+
+/** Detects or checks the format, reads the items and resolves aliases. Shared by lintProductFeed() and readFeedItems(). */
+function readFeed(text: string, target: Target, forced: FeedFormat | undefined, report: Report): FeedRead {
+  const c = compile(target);
+  const none = (format: FeedFormat | null): FeedRead => ({ format, header: null, atom: false, items: [] });
+  const body = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  const detected = detectFormat(body);
+  if (detected === null) {
+    report("feed-empty", "error", "The feed is empty.", { line: null });
+    return none(forced ?? null);
+  }
+  const format = forced ?? detected;
+  const delimited = (f: FeedFormat) => f === "tsv" || f === "csv";
+  if (delimited(format) && delimited(detected) && format !== detected) {
+    report("delimiter-wrong", "error", `The header row is separated by ${detected === "csv" ? "commas" : "tabs"}, not ${format === "tsv" ? "tabs" : "commas"}. Export it as ${FORMAT_NAMES[format]}.`, { line: 1 });
+    return none(format);
+  }
+  if (!target.formats.includes(format)) {
+    if (format === "csv" && target.formats.includes("tsv")) {
+      report("delimiter-wrong", "error", `The header row is separated by commas. ${target.label} reads tab-separated text: in a spreadsheet, save as "Text (tab delimited)" or download as TSV.`, { line: 1 });
+    } else {
+      report("format-unsupported", "error", `This looks like ${FORMAT_NAMES[format]}, which ${target.label} doesn't accept. Use ${target.formats.map((f) => FORMAT_NAMES[f]).join(", ")}.`, { line: 1 });
+    }
+    return none(format);
+  }
+
+  const { items: rawItems, header, atom } = read(body, format, { report, normalize: c.normalize, isKnown: c.isKnown, repeatedColumns: target.repeatedColumns });
+  const reported = new Set<string>();
+  const items = rawItems.map((raw): Item => {
+    const fields = new Map<string, Field[]>();
+    const add = (name: string, field: Field) => {
+      const list = fields.get(name);
+      if (list) list.push(field);
+      else fields.set(name, [field]);
+    };
+    // Canonical names first, so an alias is used only when its canonical name is absent.
+    for (const f of raw.fields) {
+      if (!c.aliases.has(f.name)) add(f.name, f);
+    }
+    const viaAlias = new Map<string, string>();
+    for (const f of raw.fields) {
+      const canonical = c.aliases.get(f.name);
+      if (canonical === undefined) continue;
+      const existing = fields.has(canonical) ? (viaAlias.get(canonical) ?? canonical) : f.name;
+      if (existing !== f.name) {
+        const wins = existing === canonical && c.specs.get(canonical)?.aliasWins === true;
+        const key = `${existing} ${f.name}`;
+        if (!reported.has(key)) {
+          reported.add(key);
+          report("attribute-alias", "warning", `${f.name} and ${existing} both set ${canonical}. Send only one name per value; ${wins ? f.name : existing} is the one used and checked. Reported once.`, { line: f.line, attribute: f.name });
+        }
+        if (!wins) continue;
+        fields.delete(canonical);
+      }
+      viaAlias.set(canonical, f.name);
+      add(canonical, f);
+    }
+    return { line: raw.line, fields, id: fields.get(target.idAttribute)?.[0]?.value || null };
+  });
+  return { format, header, atom, items };
+}
+
+function finding(rule: RuleId, severity: Severity, message: string, at: { line: number | null; itemId?: string | null; attribute?: string | null }): FeedFinding {
+  return { rule, severity, message, line: at.line, itemId: at.itemId ?? null, attribute: at.attribute ?? null };
+}
+
+/**
+ * Reads a feed into items with their attributes, the way lintProductFeed() reads it (same
+ * readers, format rules and aliases), for tools that need the values rather than the checks.
+ * Never throws on bad feed text. Throws a TypeError for invalid options, like lintProductFeed().
+ */
+export function readFeedItems(text: string, options: LintOptions = {}): FeedItemsResult {
+  const { target, format: forced } = checkOptions(options);
+  if (typeof text !== "string") throw new TypeError("text must be a string.");
+  const findings: FeedFinding[] = [];
+  const { format, items } = readFeed(text, target, forced, (...args) => findings.push(finding(...args)));
+  findings.sort((a, b) => (a.line ?? 0) - (b.line ?? 0));
+  return {
+    target: target.name,
+    format,
+    items: items.map((item) => {
+      const attributes: Record<string, string[]> = Object.create(null);
+      for (const [name, fields] of item.fields) attributes[name] = fields.map((f) => f.value);
+      return { id: item.id, line: item.line, attributes };
+    }),
+    findings,
+  };
+}
+
 /**
  * Lints a product feed against Google Merchant Center's or OpenAI's product feed spec. Never
  * throws on bad feed text: problems become findings. Throws a TypeError for invalid options.
@@ -112,52 +239,15 @@ export function lintProductFeed(text: string, options: LintOptions = {}): Produc
   if (typeof text !== "string") throw new TypeError("text must be a string.");
   const c = compile(target);
   const findings: FeedFinding[] = [];
-  const report: Report = (rule, severity, message, at) =>
-    findings.push({ rule, severity, message, line: at.line, itemId: at.itemId ?? null, attribute: at.attribute ?? null });
-  const finish = (format: FeedFormat | null, itemCount: number): ProductFeedResult => {
-    findings.sort((a, b) => (a.line ?? 0) - (b.line ?? 0));
-    let errorCount = 0;
-    for (const f of findings) if (f.severity === "error") errorCount++;
-    return { valid: errorCount === 0, target: target.name, format, itemCount, errorCount, warningCount: findings.length - errorCount, findings };
-  };
-
-  const body = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
-  const detected = detectFormat(body);
-  if (detected === null) {
-    report("feed-empty", "error", "The feed is empty.", { line: null });
-    return finish(forced ?? null, 0);
-  }
-  const format = forced ?? detected;
-  const delimited = (f: FeedFormat) => f === "tsv" || f === "csv";
-  if (delimited(format) && delimited(detected) && format !== detected) {
-    report("delimiter-wrong", "error", `The header row is separated by ${detected === "csv" ? "commas" : "tabs"}, not ${format === "tsv" ? "tabs" : "commas"}. Export it as ${FORMAT_NAMES[format]}.`, { line: 1 });
-    return finish(format, 0);
-  }
-  if (!target.formats.includes(format)) {
-    if (format === "csv" && target.formats.includes("tsv")) {
-      report("delimiter-wrong", "error", `The header row is separated by commas. ${target.label} reads tab-separated text: in a spreadsheet, save as "Text (tab delimited)" or download as TSV.`, { line: 1 });
-    } else {
-      report("format-unsupported", "error", `This looks like ${FORMAT_NAMES[format]}, which ${target.label} doesn't accept. Use ${target.formats.map((f) => FORMAT_NAMES[f]).join(", ")}.`, { line: 1 });
-    }
-    return finish(format, 0);
-  }
-
-  const normalize = target.strict ? (name: string) => name.trim() : (name: string) => name.trim().toLowerCase().replace(/ +/g, "_");
-  const isKnown = (name: string) => c.specs.has(name) || c.aliases.has(name);
-  const { items: rawItems, header, atom } = read(body, format, { report, normalize, isKnown, repeatedColumns: target.repeatedColumns });
-  const where = delimited(format) ? "row" : "line";
+  const report: Report = (...args) => findings.push(finding(...args));
+  const { format, header, atom, items } = readFeed(text, target, forced, report);
+  const where = format === "tsv" || format === "csv" ? "row" : "line";
 
   const missingColumns = new Set<string>();
   const unknown = new Map<string, { line: number; count: number }>();
-  const reported = new Set<string>();
-  const once = (key: string): boolean => {
-    if (reported.has(key)) return false;
-    reported.add(key);
-    return true;
-  };
   // Collects names that aren't current attributes (unknown or retired), reported once each.
   const noteName = (name: string, line: number) => {
-    if ((isKnown(name) && !c.specs.get(name)?.retired) || (atom && name === "updated")) return;
+    if ((c.isKnown(name) && !c.specs.get(name)?.retired) || (atom && name === "updated")) return;
     const seen = unknown.get(name);
     if (seen) seen.count++;
     else unknown.set(name, { line, count: 1 });
@@ -171,38 +261,10 @@ export function lintProductFeed(text: string, options: LintOptions = {}): Produc
       missingColumns.add(spec.name);
       report("attribute-missing", spec.missingSeverity ?? "error", `The header has no ${spec.name} column. ${spec.requiredNote ?? `${spec.name} is required for every product.`}`, { line: header.line, attribute: spec.name });
     }
+  } else {
+    // Aliases are known names, so the resolved fields hold every name worth noting.
+    for (const item of items) for (const [name, fields] of item.fields) for (const f of fields) noteName(name, f.line);
   }
-
-  const items: Item[] = rawItems.map((raw) => {
-    const fields = new Map<string, Field[]>();
-    const add = (name: string, field: Field) => {
-      const list = fields.get(name);
-      if (list) list.push(field);
-      else fields.set(name, [field]);
-    };
-    // Canonical names first, so an alias is used only when its canonical name is absent.
-    for (const f of raw.fields) {
-      if (!header) noteName(f.name, f.line);
-      if (!c.aliases.has(f.name)) add(f.name, f);
-    }
-    const viaAlias = new Map<string, string>();
-    for (const f of raw.fields) {
-      const canonical = c.aliases.get(f.name);
-      if (canonical === undefined) continue;
-      const existing = fields.has(canonical) ? (viaAlias.get(canonical) ?? canonical) : f.name;
-      if (existing !== f.name) {
-        const wins = existing === canonical && c.specs.get(canonical)?.aliasWins === true;
-        if (once(`alias ${existing} ${f.name}`)) {
-          report("attribute-alias", "warning", `${f.name} and ${existing} both set ${canonical}. Send only one name per value; ${wins ? f.name : existing} is the one used and checked. Reported once.`, { line: f.line, attribute: f.name });
-        }
-        if (!wins) continue;
-        fields.delete(canonical);
-      }
-      viaAlias.set(canonical, f.name);
-      add(canonical, f);
-    }
-    return { line: raw.line, fields, id: fields.get(target.idAttribute)?.[0]?.value || null };
-  });
 
   if (items.length === 0 && !findings.some((f) => f.severity === "error")) {
     report("feed-empty", "error", header ? "The feed has a header row but no products." : "The feed has no products.", { line: header?.line ?? null });
@@ -235,7 +297,11 @@ export function lintProductFeed(text: string, options: LintOptions = {}): Produc
     report("attribute-unknown", "warning", `"${name}" isn't an attribute in the ${target.label} spec, so it is probably ignored.${guess ? ` Did you mean ${guess}?` : ""}${times}`, { line, attribute: name });
   }
   target.checkFeed(items, report);
-  return finish(format, items.length);
+
+  findings.sort((a, b) => (a.line ?? 0) - (b.line ?? 0));
+  let errorCount = 0;
+  for (const f of findings) if (f.severity === "error") errorCount++;
+  return { valid: errorCount === 0, target: target.name, format, itemCount: items.length, errorCount, warningCount: findings.length - errorCount, findings };
 
   function checkPresence(item: Item): void {
     if (atom && !item.fields.has("updated")) {
