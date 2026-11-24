@@ -2,8 +2,11 @@
 // fetched, read from disk or written, so there is no SSRF, path or network surface. Each
 // handler is a thin adapter over a published WebSync package.
 
+import { lintLlmsTxt } from "llms-txt-kit";
+import { lintMetadata } from "metacheck";
 import { analyzeHeaders, parseRawHeaders } from "security-header-audit";
 import { lintProductCsv, detectPlatform, type Platform } from "product-csv-lint";
+import { validateStructuredData } from "schemaview";
 import { lintSitemap } from "sitemap-lint";
 import { validateAbnOrAcn, validateGstin, validateGtin, validateIsbn, validateRoutingNumber, validateVatNumber, analyzeIban } from "websync-validators";
 
@@ -28,6 +31,21 @@ export class ToolInputError extends Error {}
 
 const MAX_FINDINGS = 200;
 const MAX_DOCUMENT = 50 * 1024 * 1024;
+const MAX_PAGE = 10 * 1024 * 1024;
+const MAX_URL = 2048;
+
+const PAGE_URL = {
+  type: "string",
+  maxLength: MAX_URL,
+  description: "The absolute http(s) URL the content is served from. Used only to resolve relative URLs and compare them; it is not fetched.",
+} as const;
+
+/** Validates an optional page URL argument, so a bad one comes back as a fixable tool error. */
+function pageUrl(url: string | undefined): { url?: string } {
+  if (url === undefined) return {};
+  if (!URL.canParse(url) || !/^https?:$/.test(new URL(url).protocol)) throw new ToolInputError(`"url" must be an absolute http(s) URL, got "${url}".`);
+  return { url };
+}
 
 // Long finding lists would flood the model's context; keep the first ones and say how many
 // were left out.
@@ -126,6 +144,65 @@ export const TOOLS: Tool[] = [
       const target = (platform as Platform | undefined) ?? detectPlatform(csv);
       if (!target) throw new ToolInputError("Couldn't tell from the header row whether this is a Shopify or WooCommerce file. Pass platform.");
       return capFindings(lintProductCsv(csv, target));
+    },
+  },
+  {
+    name: "lint_page_metadata",
+    title: "Lint a web page's SEO and sharing metadata",
+    description:
+      "Checks a page's HTML for search and social metadata: title and meta description (presence, duplicates, length guidance), canonical, robots directives, html lang, charset, viewport, Open Graph and X (Twitter) card tags, h1 and heading order, hreflang alternates, and metadata placed in body instead of head. Returns findings with rule ids and line numbers plus the extracted metadata. Pass the raw HTML as served; JavaScript is not run. " +
+      READ_ONLY_NOTE,
+    inputSchema: {
+      type: "object",
+      properties: {
+        html: { type: "string", maxLength: MAX_PAGE, description: "The page's HTML source." },
+        url: PAGE_URL,
+      },
+      required: ["html"],
+      additionalProperties: false,
+    },
+    run: ({ html, url }) => capFindings(lintMetadata(html, pageUrl(url))),
+  },
+  {
+    name: "validate_structured_data",
+    title: "Validate JSON-LD structured data",
+    description:
+      "Validates schema.org JSON-LD, either in a page's HTML (every application/ld+json script) or as raw JSON-LD, against the required and recommended properties Google documents for rich results: Article, Product and merchant listings, Review, Breadcrumb, Organization, LocalBusiness, Event, Recipe, Video, JobPosting, SoftwareApplication and more. Reports invalid JSON with line numbers, deprecated types, and bad dates, URLs, prices and enum values. Not Google's validator; Microdata and RDFa are not read. " +
+      READ_ONLY_NOTE,
+    inputSchema: {
+      type: "object",
+      properties: {
+        input: { type: "string", maxLength: MAX_PAGE, description: "A page's HTML, or JSON-LD text." },
+        url: PAGE_URL,
+      },
+      required: ["input"],
+      additionalProperties: false,
+    },
+    run: ({ input, url }) => {
+      const result = validateStructuredData(input, pageUrl(url));
+      return { ...capFindings(result), entities: result.entities.slice(0, MAX_FINDINGS), entityCount: result.entities.length };
+    },
+  },
+  {
+    name: "lint_llms_txt",
+    title: "Lint an llms.txt file",
+    description:
+      "Checks an llms.txt file against the llmstxt.org proposal: a single H1 first, the blockquote summary, H2 sections of '- [name](url): notes' links, the Optional section, malformed items, invalid and duplicate URLs, and HTML served in place of the file. Returns findings with rule ids and line numbers plus an outline of the file. " +
+      READ_ONLY_NOTE,
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", maxLength: MAX_PAGE, description: "The llms.txt content." },
+        url: PAGE_URL,
+      },
+      required: ["text"],
+      additionalProperties: false,
+    },
+    run: ({ text, url }) => {
+      const { doc, ...result } = lintLlmsTxt(text, pageUrl(url));
+      // The caller already has the text; an outline is enough to talk about its structure.
+      const sections = doc.sections.map(({ title, optional, links }) => ({ title, optional, linkCount: links.length }));
+      return { ...capFindings(result), outline: { title: doc.title, summary: doc.summary ?? null, sections } };
     },
   },
 ];

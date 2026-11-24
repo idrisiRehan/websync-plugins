@@ -1,7 +1,7 @@
 # websync-mcp
 
 A local [Model Context Protocol](https://modelcontextprotocol.io) server that gives AI
-assistants (Claude Code, Claude Desktop, Cursor and any other MCP client) four offline checks
+assistants (Claude Code, Claude Desktop, Cursor and any other MCP client) seven offline checks
 from WebSync:
 
 | Tool | What it does |
@@ -10,15 +10,20 @@ from WebSync:
 | `grade_security_headers` | Grades HTTP response headers (HSTS, CSP, clickjacking, nosniff, Referrer-Policy, Permissions-Policy), with a 0-100 score and a spec-based reason for each check. |
 | `lint_sitemap` | Lints an XML sitemap or sitemap index against the sitemaps.org protocol, with line numbers. |
 | `lint_product_csv` | Lints a Shopify or WooCommerce product CSV before import, with spreadsheet row numbers. |
+| `lint_page_metadata` | Lints a page's HTML for search and sharing metadata: title, description, canonical, robots, Open Graph, X cards, headings, hreflang. Returns the extracted metadata too. |
+| `validate_structured_data` | Validates JSON-LD against the properties Google documents for rich results (Product, Article, Breadcrumb, Event, Recipe and more), with line numbers. |
+| `lint_llms_txt` | Lints an `llms.txt` file against the llmstxt.org proposal. |
 
 **No network access.** Every tool works only on the text the assistant passes in. The server
 never fetches URLs, reads or writes files, or opens sockets. To check a live site, the
-assistant fetches the headers, sitemap or CSV with its own tools and passes the text. That
+assistant fetches the headers, page, sitemap or file with its own tools and passes the text. That
 leaves no SSRF surface and no way to make the server reach your internal network.
 
 Each tool is a thin adapter over a published package:
-[`websync-validators`](../validators), [`security-header-audit`](../security-header-audit),
-[`sitemap-lint`](../sitemap-lint) and [`product-csv-lint`](../product-csv-lint). The server
+[`websync-validators`](https://www.npmjs.com/package/websync-validators), [`security-header-audit`](https://www.npmjs.com/package/security-header-audit),
+[`sitemap-lint`](https://www.npmjs.com/package/sitemap-lint), [`product-csv-lint`](https://www.npmjs.com/package/product-csv-lint),
+[`metacheck`](https://www.npmjs.com/package/metacheck), [`schemaview`](https://www.npmjs.com/package/schemaview) and
+[`llms-txt-kit`](https://www.npmjs.com/package/llms-txt-kit). The server
 itself has no other dependencies.
 
 ## Set up
@@ -50,6 +55,8 @@ Then ask in plain language, for example:
 - "Fetch the headers for https://example.com and grade them."
 - "Check public/sitemap.xml against the sitemap protocol."
 - "Lint products_export.csv before I import it into Shopify."
+- "Fetch https://example.com/pricing and check its metadata and structured data."
+- "Is our llms.txt well formed?"
 
 ## Tool reference
 
@@ -65,10 +72,15 @@ closed-world.
 | `grade_security_headers` | `headers`: raw `Name: value` lines or `curl -sI` output, up to 64 KB | `score`, `rating`, `rules` |
 | `lint_sitemap` | `xml`: up to 50 MB | `valid`, `kind`, `entryCount`, `locCount`, `findings` |
 | `lint_product_csv` | `csv`: up to 50 MB. `platform` (optional): `shopify` or `woocommerce` | `valid`, `platform`, counts, `findings` |
+| `lint_page_metadata` | `html`: up to 10 MB. `url` (optional): the page's absolute URL | `valid`, counts, `findings`, `metadata` |
+| `validate_structured_data` | `input`: HTML or JSON-LD, up to 10 MB. `url` (optional) | `valid`, `format`, counts, `findings`, `entities` (first 200), `entityCount` |
+| `lint_llms_txt` | `text`: up to 10 MB. `url` (optional): where the file is served | `valid`, counts, `findings`, `outline` (title, summary, sections with link counts) |
 
 Finding lists are capped at 200 entries, so a large file doesn't flood the assistant's context.
 `findingsOmitted` says how many were left out, and the error and warning counts always cover
-the whole file. `lint_sitemap` returns `locCount` instead of every URL.
+the whole file. `lint_sitemap` returns `locCount` instead of every URL, and `lint_llms_txt`
+returns an outline instead of every link. The optional `url` arguments are only used to
+resolve relative URLs; they are never fetched.
 
 ## Protocol
 

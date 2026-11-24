@@ -74,9 +74,17 @@ describe("JSON-RPC errors", () => {
 });
 
 describe("tools/list", () => {
-  test("lists four read-only tools with strict input schemas", () => {
+  test("lists seven read-only tools with strict input schemas", () => {
     const { tools } = request("tools/list").result as { tools: Record<string, any>[] };
-    assert.deepEqual(tools.map((t) => t.name), ["validate_identifier", "grade_security_headers", "lint_sitemap", "lint_product_csv"]);
+    assert.deepEqual(tools.map((t) => t.name), [
+      "validate_identifier",
+      "grade_security_headers",
+      "lint_sitemap",
+      "lint_product_csv",
+      "lint_page_metadata",
+      "validate_structured_data",
+      "lint_llms_txt",
+    ]);
     for (const tool of tools) {
       assert.equal(tool.inputSchema.type, "object");
       assert.equal(tool.inputSchema.additionalProperties, false);
@@ -129,6 +137,39 @@ describe("tools/call", () => {
     assert.equal(woo.platform, "woocommerce");
   });
 
+  test("lint_page_metadata returns findings and the extracted metadata", () => {
+    const html = '<!doctype html><html lang="en"><head><title>Hi</title><link rel="canonical" href="/a"></head><body><h1>A</h1></body></html>';
+    const data = callTool("lint_page_metadata", { html, url: "https://e.com/a" }).structuredContent!;
+    assert.equal((data.metadata as { title: string }).title, "Hi");
+    assert.equal((data.metadata as { canonical: string }).canonical, "https://e.com/a");
+    assert.ok((data.findings as { rule: string }[]).some((f) => f.rule === "title-too-short"));
+    assert.equal(data.findingsOmitted, 0);
+  });
+
+  test("validate_structured_data reads JSON-LD from HTML and reports a missing required property", () => {
+    const json = JSON.stringify({ "@context": "https://schema.org", "@type": "Product", offers: { "@type": "Offer", price: "5", priceCurrency: "USD" } });
+    const data = callTool("validate_structured_data", { input: `<script type="application/ld+json">${json}</script>` }).structuredContent!;
+    assert.equal(data.valid, false);
+    assert.equal(data.entityCount, (data.entities as unknown[]).length);
+    assert.ok((data.findings as { rule: string; path: string }[]).some((f) => f.rule === "property-required"));
+  });
+
+  test("lint_llms_txt returns an outline instead of every link", () => {
+    const text = `# Site
+
+> Summary.
+
+## Docs
+
+- [Guide](https://e.com/guide.md): How to start
+- [API](https://e.com/api.md)
+`;
+    const data = callTool("lint_llms_txt", { text }).structuredContent!;
+    assert.equal(data.valid, true);
+    assert.deepEqual(data.outline, { title: "Site", summary: "Summary.", sections: [{ title: "Docs", optional: false, linkCount: 2 }] });
+    assert.equal(data.doc, undefined);
+  });
+
   test("long finding lists are capped at 200", () => {
     const rows = Array.from({ length: 300 }, (_, i) => `Tee ${i},tee-${i},$${i}`).join("\n");
     const data = callTool("lint_product_csv", { csv: `Title,URL handle,Price\n${rows}` }).structuredContent!;
@@ -148,6 +189,8 @@ describe("tool input errors come back as tool results the model can act on", () 
     ["validate_identifier", "vat", /must be an object/],
     ["grade_security_headers", { headers: "no headers here" }, /No 'Name: value' header lines/],
     ["lint_product_csv", { csv: "name,email\na,b" }, /Pass platform/],
+    ["lint_page_metadata", { html: "<title>x</title>", url: "/relative" }, /must be an absolute http/],
+    ["lint_llms_txt", { text: "# x", url: "ftp://e.com/" }, /must be an absolute http/],
   ];
   for (const [name, args, pattern] of cases) {
     test(`${name} ${JSON.stringify(args).slice(0, 50)}`, () => {

@@ -32,7 +32,7 @@ const INVALID_PARAMS = -32602;
 const INTERNAL_ERROR = -32603;
 
 const INSTRUCTIONS =
-  "Offline WebSync checks. Every tool works on text you pass in and never fetches URLs: to check a live site, fetch the headers, sitemap or file yourself and pass the text.";
+  "Offline WebSync checks. Every tool works on text you pass in and never fetches URLs: to check a live site, fetch the headers, page, sitemap or file yourself and pass the text.";
 
 function isId(value: unknown): value is Id {
   return typeof value === "string" || typeof value === "number" || value === null;

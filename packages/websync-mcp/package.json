@@ -1,7 +1,7 @@
 {
   "name": "websync-mcp",
   "version": "1.0.0",
-  "description": "Local MCP server (stdio) that gives AI assistants offline WebSync checks: business and product identifier validation, security header grading, sitemap linting and Shopify/WooCommerce product CSV linting. No network access.",
+  "description": "Local MCP server (stdio) that gives AI assistants offline WebSync checks: identifier validation, security header grading, sitemap, product CSV, page metadata, JSON-LD structured data and llms.txt linting. No network access.",
   "type": "module",
   "exports": {
     ".": {
@@ -46,7 +46,11 @@
     "security-headers",
     "sitemap",
     "shopify",
-    "woocommerce"
+    "woocommerce",
+    "seo",
+    "structured-data",
+    "json-ld",
+    "llms-txt"
   ],
   "author": "Rehan Idrisi (https://websync.in/about/)",
   "license": "MIT",
@@ -63,7 +67,10 @@
     "websync-validators": "^1.1.0",
     "security-header-audit": "^1.0.0",
     "sitemap-lint": "^1.0.0",
-    "product-csv-lint": "^1.0.0"
+    "product-csv-lint": "^1.0.0",
+    "metacheck": "^1.0.0",
+    "schemaview": "^1.0.0",
+    "llms-txt-kit": "^1.0.0"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2"

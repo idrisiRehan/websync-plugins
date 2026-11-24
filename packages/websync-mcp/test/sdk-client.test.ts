@@ -27,9 +27,17 @@ describe("official SDK client over stdio", () => {
     assert.match(client.getInstructions() ?? "", /never fetches URLs/);
   });
 
-  test("lists the four tools", async () => {
+  test("lists the seven tools", async () => {
     const { tools } = await client.listTools();
-    assert.deepEqual(tools.map((t) => t.name).sort(), ["grade_security_headers", "lint_product_csv", "lint_sitemap", "validate_identifier"]);
+    assert.deepEqual(tools.map((t) => t.name).sort(), [
+      "grade_security_headers",
+      "lint_llms_txt",
+      "lint_page_metadata",
+      "lint_product_csv",
+      "lint_sitemap",
+      "validate_identifier",
+      "validate_structured_data",
+    ]);
   });
 
   test("calls validate_identifier", async () => {
@@ -53,6 +61,21 @@ describe("official SDK client over stdio", () => {
   test("calls lint_product_csv", async () => {
     const result = await client.callTool({ name: "lint_product_csv", arguments: { csv: "Type,SKU,Name,Regular price\nsimple,A,Mug,5" } });
     assert.equal((result.structuredContent as { platform: string }).platform, "woocommerce");
+  });
+
+  test("calls lint_page_metadata", async () => {
+    const result = await client.callTool({ name: "lint_page_metadata", arguments: { html: "<title>Hello</title>" } });
+    assert.equal((result.structuredContent as { metadata: { title: string } }).metadata.title, "Hello");
+  });
+
+  test("calls validate_structured_data", async () => {
+    const result = await client.callTool({ name: "validate_structured_data", arguments: { input: '{"@context":"https://schema.org","@type":"BreadcrumbList"}' } });
+    assert.equal(typeof (result.structuredContent as { valid: boolean }).valid, "boolean");
+  });
+
+  test("calls lint_llms_txt", async () => {
+    const result = await client.callTool({ name: "lint_llms_txt", arguments: { text: "# Site" } });
+    assert.equal((result.structuredContent as { valid: boolean }).valid, true);
   });
 
   test("bad arguments come back as a tool error, not a protocol error", async () => {
