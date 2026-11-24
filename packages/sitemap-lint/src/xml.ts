@@ -89,12 +89,15 @@ interface Frame {
 }
 
 export function parseXml(input: string): XmlParseResult {
-  // Line numbers are counted incrementally: element positions only move forward.
-  let lineCursor = 0;
+  // Line numbers are counted incrementally: element positions only move forward. The next
+  // newline is remembered, so a long single-line file isn't rescanned for every element.
   let line = 1;
+  let nextNewline = input.indexOf("\n");
   const lineAt = (pos: number): number => {
-    for (let nl = input.indexOf("\n", lineCursor); nl !== -1 && nl < pos; nl = input.indexOf("\n", nl + 1)) line++;
-    lineCursor = Math.max(lineCursor, pos);
+    while (nextNewline !== -1 && nextNewline < pos) {
+      line++;
+      nextNewline = input.indexOf("\n", nextNewline + 1);
+    }
     return line;
   };
   const errorLine = (pos: number): number => input.slice(0, pos).split("\n").length;

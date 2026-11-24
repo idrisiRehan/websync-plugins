@@ -238,4 +238,14 @@ describe("counts", () => {
     assert.deepEqual(r.findings, []);
     assert.ok(ms < 5000, `took ${Math.round(ms)} ms`);
   });
+
+  test("a large sitemap on a single line stays linear", () => {
+    // Real sitemaps are often minified onto one line (one retailer serves 50 MB that way).
+    const body = Array.from({ length: MAX_ENTRIES }, (_, i) => url(`https://e.com/p/${i}`, "<lastmod>2026-11-24</lastmod>")).join("");
+    const started = performance.now();
+    const r = lintSitemap(urlset(body).replaceAll("\n", ""));
+    const ms = performance.now() - started;
+    assert.equal(r.entryCount, MAX_ENTRIES);
+    assert.ok(ms < 5000, `took ${Math.round(ms)} ms`);
+  });
 });
