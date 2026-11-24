@@ -5,9 +5,8 @@ Scope: plugin packages in this repository only. The WebSync website is not chang
 
 ## Owner (blocks publication)
 
-1. **Create the GitHub repository `idrisiRehan/websync-plugins`** (name confirmed) and push:
-   `git remote add origin https://github.com/idrisiRehan/websync-plugins.git && git push -u origin main`,
-   run from `C:\Wamp\www\websync-plugins`. Then enable private vulnerability reporting.
+1. **GitHub:** done 2026-11-25 (`idrisiRehan/websync-plugins`, `main` pushed by the owner). Still to
+   do: enable private vulnerability reporting and add repo topics.
 2. **SECURITY.md:** decided 2026-11-25: acknowledge reports within 7 days, via
    contact@websync.in or GitHub private vulnerability reporting.
 3. **Approve publishing fifteen packages,** in this order. `product-csv-lint` needs validators
