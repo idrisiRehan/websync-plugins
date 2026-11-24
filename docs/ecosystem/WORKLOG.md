@@ -2,6 +2,29 @@
 
 Newest first. Decisions, milestones, discoveries and problems.
 
+## 2026-11-24 (night): product-feed-build and store-check (R-23, R-24)
+
+Owner approved the two showcase ideas: a store export to feed converter and a one-command
+store report. Both reuse the existing packages (ADR 0007).
+
+- **product-feed-build 1.0.0.** Shopify (current and legacy) or WooCommerce export to a Google
+  feed (RSS or TSV) or an OpenAI product feed (JSONL, CSV, TSV), linted with
+  `product-feed-lint` before it is written. Never invents data; `--availability-date` and
+  `--link-template` cover what the exports lack. `product-csv-lint` gained `readProducts()`
+  and lost five false warnings found on the platforms' own sample exports (WooCommerce
+  `backorder`, `Published` 2, compound `Type` cells, default exporter columns; Shopify typed
+  `Variant Barcodes`). Independent review fixed 9 defects, including two quadratic cases and
+  invalid XML from control characters.
+- **store-check 1.0.0.** At most 20 requests per run: redirects, robots.txt and AI crawler
+  access, sitemap, llms.txt, home page and one product page, each run through the linters.
+  Independent review ran it on 13 real stores and fixed 6 defects (false "no Product data" on
+  ProductGroup pages, bot protection read as "missing", HTML served for optional files).
+- **sitemap-lint:** the XML reader's line counter rescanned long lines, so a 50 MB single-line
+  sitemap (found on a large retailer) took hours, and hung `store-check`. Fixed; a 50,000-entry
+  single-line test takes about 1 s (36 s before).
+- `npm run check`: 1,717 tests, pass. Thirteen packages packed and installed together offline;
+  the new CLIs ran, including `store-check` against a live store.
+
 ## 2026-11-24 (evening): robots-txt-lint and product-feed-lint (R-17, R-18, R-20)
 
 Owner direction: in the age of AI, build exact checks for files machines read, and something

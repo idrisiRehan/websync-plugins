@@ -9,12 +9,14 @@ Strategy filter (owner direction, 2026-11-24): ecommerce first; exact, spec-sour
 that agents and CI can call; files that crawlers and shopping agents read. No general
 developer utilities, nothing that crawls third-party sites.
 
-## In progress
+## Built in this round
 
 | Candidate | Status |
 |---|---|
-| `robots-txt-lint` | Building (R-17) |
-| `product-feed-lint`, Google Merchant Center and OpenAI (ChatGPT shopping) targets | Building (R-18) |
+| `robots-txt-lint` | Done (R-17) |
+| `product-feed-lint`, Google Merchant Center and OpenAI (ChatGPT shopping) targets | Done (R-18) |
+| `product-feed-build`: Shopify or WooCommerce export to Google or ChatGPT shopping feed | Done (R-23) |
+| `store-check`: one report of what search engines and AI agents see on a store | Done (R-24) |
 
 ## Ranked candidates
 
@@ -93,12 +95,11 @@ upkeep, Cplx simple to build, Sec low risk. Higher is better on every column.
 
 ## Recommended order
 
-1. Finish and review `robots-txt-lint` and `product-feed-lint` (both targets).
-2. `ai-crawler-log`: the AI-niche package with no direct competitor, and it shares the crawler
+1. `ai-crawler-log`: the AI-niche package with no direct competitor, and it shares the crawler
    table with `robots-txt-lint`.
-3. Feed-versus-page check in `product-feed-lint` 1.1.
-4. Cookie audit in `security-header-audit` 1.1, together with the R-4 decision.
-5. `email-auth-lint`.
-6. GitHub Action, once the packages are on npm.
+2. Feed-versus-page check in `product-feed-lint` 1.1.
+3. Cookie audit in `security-header-audit` 1.1, together with the R-4 decision.
+4. `email-auth-lint`.
+5. GitHub Action, once the packages are on npm.
 
 Everything below that waits for download numbers from the published packages.

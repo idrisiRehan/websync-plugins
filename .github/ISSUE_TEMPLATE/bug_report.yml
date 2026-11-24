@@ -17,6 +17,8 @@ body:
         - redirect-inspector
         - robots-txt-lint
         - product-feed-lint
+        - product-feed-build
+        - store-check
         - websync-mcp
     validations:
       required: true
