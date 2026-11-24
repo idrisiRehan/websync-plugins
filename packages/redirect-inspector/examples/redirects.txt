@@ -1,0 +1,21 @@
+# A redirect map: one "from-url target-url" pair per line, separated by spaces or tabs.
+# Blank lines and lines starting with # are ignored. A target that is only a path is
+# resolved against its from-url.
+#
+#   npx redirect-inspector --map examples/redirects.txt
+#
+# These are live public URLs, so results can change as those sites change.
+
+# HTTP to HTTPS
+http://websync.in/                    https://websync.in/
+http://github.com/                    https://github.com/
+
+# Another host
+http://www.github.com/                https://github.com/
+https://www.wikipedia.org/wiki/HTTP   https://en.wikipedia.org/wiki/HTTP
+
+# A new path on the same site
+https://nodejs.org/en/docs            /docs/latest/api/
+
+# Expected to move to HTTPS, but doesn't redirect
+http://example.com/                   https://example.com/

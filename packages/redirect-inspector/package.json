@@ -1,0 +1,61 @@
+{
+  "name": "redirect-inspector",
+  "version": "1.0.0",
+  "description": "Follow a URL's redirect chain hop by hop and report loops, missing or invalid Location headers, HTTPS downgrades, temporary redirects and long chains. Checks redirect maps after a site migration. Zero dependencies, with a CLI for CI.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "websync-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "redirect-inspector": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "redirect",
+    "redirects",
+    "redirect-chain",
+    "redirect-checker",
+    "301",
+    "302",
+    "308",
+    "http-status",
+    "location-header",
+    "site-migration",
+    "seo",
+    "technical-seo",
+    "cli"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://github.com/idrisiRehan/websync-plugins/tree/main/packages/redirect-inspector#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/redirect-inspector"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  }
+}
