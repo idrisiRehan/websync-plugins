@@ -172,7 +172,8 @@ interface RedirectFinding {
 ```
 
 `REDIRECT_STATUSES` is also exported: the set of statuses that are followed as redirects
-(301, 302, 303, 307 and 308, the Fetch Standard's redirect statuses).
+(301, 302, 303, 307 and 308, the Fetch Standard's redirect statuses), by `inspectRedirects()`
+and by `createFetcher()` below.
 
 `inspectRedirects()` throws only for a start URL that isn't an absolute http(s) URL, for
 invalid options, and in a runtime whose `fetch` hides redirect responses (browsers return an
@@ -181,6 +182,92 @@ that fails becomes a `request-failed` finding, so the hops before it are kept.
 
 `GET` is the default because some servers answer `HEAD` differently, for example with 405 or
 without the redirect. With `GET` the body is cancelled as soon as the headers arrive.
+
+## Building block: createFetcher
+
+`createFetcher()` is the bounded GET client that
+[store-check](https://github.com/idrisiRehan/websync-plugins/tree/main/packages/store-check),
+[feed-page-check](https://github.com/idrisiRehan/websync-plugins/tree/main/packages/feed-page-check)
+and [ai-crawler-log](https://github.com/idrisiRehan/websync-plugins/tree/main/packages/ai-crawler-log)
+use to read pages and files. It follows redirects the same way, one hop at a time with
+`redirect: "manual"`, and puts limits on everything else:
+
+- **A request budget** (`maxRequests`) shared by every `get()` of one fetcher, redirects
+  included. A request over it isn't sent.
+- **A timeout** on each request, body included.
+- **At most `maxRedirects` redirects** per `get()` (default 5), only to http and https URLs,
+  and never back to a URL already in the chain. A `Location` sent as raw UTF-8 is read as UTF-8,
+  as `inspectRedirects()` reads it, and one that names several different targets stops the chain.
+- **A byte cap** (`maxBytes`) on each 2xx body, checked while it streams and after HTTP
+  decompression, so an endless response or a gzip bomb stops at the cap. Bodies of redirects
+  and other statuses are cancelled unread.
+
+```ts
+import { createFetcher } from "redirect-inspector";
+
+const net = createFetcher({ timeoutMs: 10000, userAgent: "my-tool (+https://example.com)", maxRequests: 20 });
+const { record, headers, body } = await net.get("https://example.com/robots.txt", { maxBytes: 1024 * 1024, accept: "text/plain" });
+
+if (record.error) console.log(`Couldn't read ${record.url}: ${record.error}`);
+else if (body) console.log(headers?.get("content-type"), new TextDecoder().decode(body));
+else console.log(`HTTP ${record.status}`); // a status other than 2xx; its body wasn't read
+```
+
+```ts
+function createFetcher(options: FetcherOptions): Fetcher;
+
+interface FetcherOptions {
+  timeoutMs: number;         // per request, body included
+  userAgent: string;
+  maxRequests?: number;      // for the fetcher's whole life, redirects included (default: no limit)
+  maxRedirects?: number;     // per get() (default 5)
+  budgetError?: string;      // the error of a refused request (default "not requested: the run's limit of n requests was reached")
+  fetch?: typeof fetch;      // inject a fetch for tests or a custom agent
+}
+
+interface Fetcher {
+  get(url: string, options: GetOptions): Promise<Fetched<Uint8Array>>;
+  get<T>(url: string, options: GetOptions & { read: BodyReader<T> }): Promise<Fetched<T>>;
+  fetch: typeof fetch;       // the same fetch, counted against maxRequests (pass it to inspectRedirects())
+  used: number;              // requests made so far
+}
+
+interface GetOptions {
+  maxBytes: number;          // body bytes to read, after HTTP decompression
+  accept?: string;           // the Accept header
+  tooLargeError?: string;    // the error of a body over maxBytes
+  cacheHops?: boolean;       // share hops with earlier gets that cached theirs with the same read and options
+}
+
+type BodyReader<T> = (body: Uint8Array, headers: Headers, url: string) => T;
+
+interface Fetched<T> {
+  record: FetchRecord;
+  headers: Headers | null;   // of the last response; null when none arrived
+  body: T | null;            // the 2xx body (or what read returned); null otherwise
+}
+
+interface FetchRecord {
+  url: string;               // as asked for
+  finalUrl: string;          // the last request's URL, after redirects, without a fragment
+  status: number | null;     // of the last request; null when it got no response
+  redirects: number;
+  durationMs: number;        // from sending each request until its body was read
+  bytes: number | null;      // body bytes read; null when not read
+  error: string | null;      // "timed out after 10000 ms", "still redirecting after 5 redirects", ...
+}
+```
+
+`get()` never throws. A timeout, a network error, a redirect to a non-http URL or to several
+different `Location`s, a loop, too many redirects, a body over the cap, the budget, an error
+thrown by `read`, and a URL that isn't absolute http or https are all a one-line `record.error`. A status other than 2xx is not an error: `status` says what
+happened, and `body` is null. `createFetcher()` throws a `RangeError` for bad options.
+
+Gets with `cacheHops` request each URL at most once per fetcher, so links that redirect to the
+same page share one request for it. A cached hop keeps its body, so give such gets a `read`
+that turns the body into the smaller value you need (it runs once per response). Hops are shared
+only between gets with the same `read` function, `accept`, `maxBytes` and `tooLargeError`, so a
+get never receives a body read for different options.
 
 ## Rules
 
@@ -242,9 +329,13 @@ you don't want behind a public endpoint: anyone could use it to probe your inter
 
 - Only `http:` and `https:` URLs are requested, and only the five redirect statuses are
   followed.
-- Every request has a timeout. No more than `maxHops + 1` requests are made per URL.
-- Response bodies are never read. A `GET` body is cancelled as soon as the headers arrive.
-- No cookies or credentials are sent. The `User-Agent` names this package.
+- Every request has a timeout. No more than `maxHops + 1` requests are made per URL
+  (`maxRedirects + 1` per `get()`).
+- `inspectRedirects()` never reads a response body. A `GET` body is cancelled as soon as the
+  headers arrive. `createFetcher()` reads only 2xx bodies, up to `maxBytes` while they stream,
+  and cancels the rest.
+- No cookies or credentials are sent. The default `User-Agent` names this package;
+  `createFetcher()` sends the one you give it.
 
 Don't wrap it in a public service without SSRF protection: vet every hop's resolved address
 and pin it, as described in the repository's

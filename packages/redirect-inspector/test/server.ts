@@ -3,6 +3,11 @@
 
 import { createServer, type IncomingMessage } from "node:http";
 import type { AddressInfo } from "node:net";
+import { gzipSync } from "node:zlib";
+
+let bomb: Buffer | undefined;
+/** 64 MiB of spaces, gzipped to about 64 KiB. Made on first use. */
+export const gzipBomb = (): Buffer => (bomb ??= gzipSync(Buffer.alloc(64 * 1024 * 1024, 0x20)));
 
 export interface TestServer {
   base: string;
@@ -70,6 +75,13 @@ export async function startServer(): Promise<TestServer> {
       res.writeHead(200, { "content-type": "text/plain" });
       const timer = setInterval(() => res.write("x".repeat(64 * 1024)), 5);
       res.on("close", () => clearInterval(timer));
+    } else if (path === "/gzip-bomb") {
+      res.writeHead(200, { "content-type": "text/plain", "content-encoding": "gzip" });
+      res.end(gzipBomb());
+    } else if (path === "/stall") {
+      // Headers and a first chunk, then nothing: the timeout must cover the body too.
+      res.writeHead(200, { "content-type": "text/plain" });
+      res.write("partial");
     } else if (path === "/get-only") {
       res.writeHead(req.method === "HEAD" ? 405 : 200);
       res.end();

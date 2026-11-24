@@ -4,7 +4,8 @@
 
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
-import { inspectRedirects, DEFAULT_MAX_HOPS, DEFAULT_TIMEOUT_MS, REDIRECT_STATUSES, type RedirectResult } from "./inspect.ts";
+import { REDIRECT_STATUSES } from "./fetcher.ts";
+import { inspectRedirects, DEFAULT_MAX_HOPS, DEFAULT_TIMEOUT_MS, type RedirectResult } from "./inspect.ts";
 
 const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string };
 

@@ -18,5 +18,12 @@ All notable changes to `redirect-inspector` are recorded here. The format follow
   conflicting `Location` headers (relative values are resolved, not flagged), redirect loops, too many
   hops, HTTPS downgrades, final 4xx/5xx and unfollowed 3xx statuses, temporary redirects,
   chains of more than one redirect, and HTTP that never reaches HTTPS.
+- `createFetcher()`: the bounded GET client shared by store-check, feed-page-check and
+  ai-crawler-log. A request budget, a timeout on each request, redirects followed one hop at a
+  time (at most 5 by default, http and https only, loops refused), 2xx bodies read up to a byte
+  cap while they stream (after HTTP decompression), other bodies cancelled, optional hop caching
+  (shared only between gets with the same `read` function and options) and one-line errors.
+  `Location` headers are read like `inspectRedirects()` reads them: raw UTF-8 decoded, and
+  several different targets refused.
 - `redirect-inspector` CLI for one or more URLs, with `--expect`, `--map` for redirect maps
   (checked four at a time), `--json`, `--max-hops`, `--timeout` and `--method`.

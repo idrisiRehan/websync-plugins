@@ -2,6 +2,8 @@
 // problems with each hop and with the chain as a whole. Status code semantics are from
 // RFC 9110 (https://www.rfc-editor.org/rfc/rfc9110.html), cited by section below.
 
+import { decodeLocation, locationTargets, REDIRECT_STATUSES, requestError } from "./fetcher.ts";
+
 /**
  * Google's crawlers follow up to 10 redirect hops by default ("How HTTP status codes, and
  * network and DNS errors affect Google Search", section 3xx:
@@ -11,10 +13,6 @@ export const DEFAULT_MAX_HOPS = 10;
 export const DEFAULT_TIMEOUT_MS = 10_000;
 export const DEFAULT_USER_AGENT = "redirect-inspector (+https://github.com/idrisiRehan/websync-plugins)";
 
-// The statuses that browsers follow automatically (the Fetch Standard's "redirect status").
-// RFC 9110 s15.4 lets a client follow any 3xx with a Location, but 300, 304, 305 and 306 are
-// not moves, and no browser follows them.
-export const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 // 302 (s15.4.3), 303 (s15.4.4) and 307 (s15.4.8) say the move is temporary or indirect.
 // Google treats them as a weak signal and keeps the original URL in results.
 const TEMPORARY_STATUSES = new Set([302, 303, 307]);
@@ -98,26 +96,6 @@ function withoutHash(url: URL): string {
   return url.href.split("#", 1)[0];
 }
 
-// fetch decodes header bytes as Latin-1, so a Location sent as raw UTF-8 instead of
-// percent-encoded arrives garbled. Browsers and undici read it as UTF-8, so do the same.
-function decodeLocation(value: string): string {
-  if (!/^[\x00-\xff]*$/.test(value) || !/[\x80-\xff]/.test(value)) return value;
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(Uint8Array.from(value, (c) => c.charCodeAt(0)));
-  } catch {
-    return value;
-  }
-}
-
-function requestError(error: unknown, timeoutMs: number): string {
-  if (!(error instanceof Error)) return String(error);
-  if (error.name === "TimeoutError") return `timed out after ${timeoutMs} ms`;
-  // A host with several addresses (localhost: ::1 and 127.0.0.1) fails with an AggregateError
-  // whose message is empty, so fall back to its code (ECONNREFUSED).
-  const cause = error.cause instanceof Error ? error.cause.message || (error.cause as { code?: string }).code : undefined;
-  return cause ? `${error.message}: ${cause}` : error.message;
-}
-
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
@@ -174,10 +152,7 @@ export async function inspectRedirects(url: string, options: InspectOptions = {}
       report("location-missing", "error", `${status} has no Location header, so clients have nowhere to go.`, hop);
       break;
     }
-    // fetch joins repeated headers with ", ", which a valid Location can't contain (spaces must
-    // be percent-encoded). Repeats of one value are harmless; different ones are refused by
-    // Chrome (ERR_RESPONSE_HEADERS_MULTIPLE_LOCATION), and other clients pick one.
-    const targets = [...new Set(location.split(", ").map((t) => t.trim()))];
+    const targets = locationTargets(location);
     if (targets.length > 1) {
       report("location-multiple", "error", `${status} gives ${targets.length} different Locations (${targets.map((t) => `"${t}"`).join(", ")}). Chrome refuses the redirect, and other clients may follow either one. Send one Location header.`, hop);
       break;
