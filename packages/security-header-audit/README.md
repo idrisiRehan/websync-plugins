@@ -116,7 +116,8 @@ security-header-audit --raw <file> [options]    (use - to read stdin)
   --timeout <ms>     Request timeout in milliseconds (default 10000)
 ```
 
-Exit codes: `0` graded, `1` score below `--min-score`, `2` usage or network error.
+Exit codes: `0` graded, `1` score below `--min-score`, `2` usage or network error, or `--raw`
+input over 1 MB.
 
 ```sh
 npx security-header-audit example.com                    # https:// is assumed

@@ -92,6 +92,12 @@ describe("CLI", () => {
     assert.match(r.stdout, new RegExp(`OK {2}ends at the expected ${base}/ok`));
   });
 
+  test("--expect accepts a path, resolved against the URL", async () => {
+    const r = await run([`${base}/chain`, "--expect", "/ok"]);
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, new RegExp(`OK {2}ends at the expected ${base}/ok`));
+  });
+
   test("--expect exits 1 on a different final URL", async () => {
     const r = await run([`${base}/301`, "--expect", `${base}/elsewhere`, "--json"]);
     assert.equal(r.code, 1);

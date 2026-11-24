@@ -5,7 +5,7 @@
 // content that can't be in it (non-whitespace text or any other start tag). Google reads head
 // metadata the same way: https://developers.google.com/search/docs/crawling-indexing/valid-page-metadata
 
-import { tokenizeHtml } from "./html.ts";
+import { tokenizeHtml, type HtmlToken } from "./html.ts";
 
 export interface ScannedElement {
   tag: string;
@@ -49,6 +49,25 @@ const RAW_TEXT_TAGS = new Set(["script", "style", "title", "textarea"]);
 // foreign content whose <title> is an SVG tooltip, not the page title.
 const SKIPPED_TAGS = new Set(["noscript", "template", "svg", "math"]);
 const FOREIGN_TAGS = new Set(["svg", "math"]);
+// HTML start tags that end foreign content, so an unclosed <svg> can't hide the rest of the
+// page (WHATWG "rules for parsing tokens in foreign content"). <font> breaks out only with
+// color, face or size.
+const BREAKOUT_TAGS = new Set([
+  "b", "big", "blockquote", "body", "br", "center", "code", "dd", "div", "dl", "dt", "em", "embed", "h1", "h2", "h3",
+  "h4", "h5", "h6", "head", "hr", "i", "img", "li", "listing", "menu", "meta", "nobr", "ol", "p", "pre", "ruby", "s",
+  "small", "span", "strong", "strike", "sub", "sup", "table", "tt", "u", "ul", "var",
+]);
+// Elements inside foreign content whose children are parsed as HTML, so a <div> in them stays
+// there: SVG's HTML integration points and MathML's text integration points.
+const INTEGRATION_POINTS = new Set(["foreignobject", "desc", "title", "annotation-xml", "mi", "mo", "mn", "ms", "mtext"]);
+
+/** True when a token ends the foreign content it appears in, as the tree builder does. */
+function breaksOut(token: HtmlToken): boolean {
+  if (token.type === "end") return token.tag === "br" || token.tag === "p";
+  if (token.type !== "start") return false;
+  if (token.tag === "font") return "color" in token.attrs || "face" in token.attrs || "size" in token.attrs;
+  return BREAKOUT_TAGS.has(token.tag);
+}
 const HEADING = /^h[1-6]$/;
 const NON_SPACE = /[^\t\n\f\r ]/;
 const SPACES = /[\t\n\f\r ]+/g;
@@ -62,7 +81,8 @@ export function scanPage(html: string): ScannedPage {
   const page: ScannedPage = { doctype: null, html: null, titles: [], metas: [], links: [], bases: [], headings: [], headClosedBy: null };
   let mode: "initial" | "head" | "after-head" | "body" = "initial";
   let seenContent = false;
-  let skip: { tag: string; depth: number } | null = null;
+  // `html` counts open integration points inside foreign content.
+  let skip: { tag: string; depth: number; html: number } | null = null;
   let rawText: string | null = null;
   let title: ScannedTitle | null = null;
   let heading: { level: number; line: number; parts: string[] } | null = null;
@@ -79,9 +99,18 @@ export function scanPage(html: string): ScannedPage {
 
   for (const token of tokenizeHtml(html)) {
     if (skip) {
-      if (token.type === "start" && token.tag === skip.tag) skip.depth++;
-      else if (token.type === "end" && token.tag === skip.tag && --skip.depth === 0) skip = null;
-      continue;
+      const foreign = FOREIGN_TAGS.has(skip.tag);
+      if (foreign && skip.html === 0 && breaksOut(token)) {
+        skip = null; // and the token is read below as ordinary HTML
+      } else {
+        if (token.type === "start" && token.tag === skip.tag) skip.depth++;
+        else if (token.type === "end" && token.tag === skip.tag && --skip.depth === 0) skip = null;
+        else if (foreign && token.type !== "text" && token.type !== "doctype" && INTEGRATION_POINTS.has(token.tag)) {
+          if (token.type === "start" && !token.selfClosing) skip.html++;
+          else if (token.type === "end" && skip.html > 0) skip.html--;
+        }
+        continue;
+      }
     }
     if (rawText) {
       if (token.type === "text" && title) title.text += token.text;
@@ -146,7 +175,7 @@ export function scanPage(html: string): ScannedPage {
 
       if (RAW_TEXT_TAGS.has(tag)) rawText = tag;
       // "/>" is honoured only in foreign content; on <noscript> and <template> it is ignored.
-      else if (SKIPPED_TAGS.has(tag) && !(token.selfClosing && FOREIGN_TAGS.has(tag))) skip = { tag, depth: 1 };
+      else if (SKIPPED_TAGS.has(tag) && !(token.selfClosing && FOREIGN_TAGS.has(tag))) skip = { tag, depth: 1, html: 0 };
     }
   }
   closeHeading();

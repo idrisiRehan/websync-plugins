@@ -210,7 +210,9 @@ The head ends where the HTML parser ends it: at `</head>`, at `<body>` (or a str
 head (`title`, `meta`, `link`, `base`, `script`, `style`, `noscript`, `template`; after
 `</head>`, a `<noscript>` opens the body). Content inside `<noscript>` and `<template>` is
 skipped, as browsers do with scripting on, so a tracking pixel in `<noscript>` doesn't end
-the head. A `<title>` inside `<svg>` is not the page title. Microdata (`itemprop`) and RDFa
+the head. A `<title>` inside `<svg>` is not the page title. An HTML tag such as `<p>`, `<div>`
+or `<h1>` ends `<svg>` and `<math>` content, as in browsers, so an unclosed `<svg>` doesn't hide
+the rest of the page. Microdata (`itemprop`) and RDFa
 (`property`) meta tags are allowed in the body, except Open Graph and X properties.
 
 ## JSON output

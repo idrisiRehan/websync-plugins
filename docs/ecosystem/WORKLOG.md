@@ -2,6 +2,27 @@
 
 Newest first. Decisions, milestones, discoveries and problems.
 
+## 2026-11-24 (pre-release fixes): the known gaps left by the reviews
+
+Owner asked for the open issues to be fixed before publishing. Each fix has regression tests.
+
+- **metacheck:** an HTML start tag such as `<p>`, `<div>`, `<h1>` or `<meta>` (and `</p>`,
+  `</br>`) now ends `<svg>`/`<math>` content, per the WHATWG foreign-content rules, so an
+  unclosed `<svg>` no longer hides the rest of the page. HTML inside `<foreignObject>`,
+  `<desc>`, SVG `<title>` and MathML text elements stays inside.
+- **schemaview:** an `AggregateOffer` in a merchant listing is now `type-ineligible` (new
+  rule, warning). Google's merchant listing page: "merchant listings require an Offer as the
+  merchant has to be the seller". Product snippets still accept it.
+- **llms-txt-kit:** setext headings (`===`/`---` underlines) are read, and reported as
+  `heading-setext` (new rule): an error for the H1, a warning otherwise, because the
+  llmstxt.org Python module only matches `#` lines (checked in `llms_txt/core.py`).
+- **redirect-inspector:** different repeated `Location` headers are now `location-multiple`
+  (new rule, error; Chrome refuses them) instead of being read as one URL. Repeats of the same
+  value are followed. `--expect` accepts a path, resolved against the URL.
+- **product-csv-lint, security-header-audit:** CLI input is now read with a streaming cap
+  (50 MB and 1 MB).
+- `npm run check`: 1,078 tests, pass.
+
 ## 2026-11-24 (late night): metacheck, schemaview, llms-txt-kit, redirect-inspector (R-11 to R-15)
 
 Owner asked for the remaining queue to be built autonomously, with tests and docs for GitHub

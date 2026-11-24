@@ -14,7 +14,8 @@ const USAGE = `Usage:
 
 Options:
   --json               Print the results as a JSON array
-  --expect <url>       Exit with code 1 unless the chain ends at this URL (one URL only)
+  --expect <url>       Exit with code 1 unless the chain ends at this URL (one URL only;
+                       a path such as /new is resolved against that URL)
   --map <file>         Check a redirect map: one "from-url target-url" pair per line
   --max-hops <n>       Redirects to follow before stopping (default ${DEFAULT_MAX_HOPS})
   --timeout <ms>       Timeout for each request in milliseconds (default ${DEFAULT_TIMEOUT_MS})
@@ -153,7 +154,7 @@ async function main(argv: string[]): Promise<number> {
     if (positionals.length === 0) throw new UsageError("Give at least one URL, or --map <file>.");
     if (values.expect !== undefined && positionals.length !== 1) throw new UsageError("--expect works with exactly one URL.");
     entries = positionals.map((url) => ({ url: httpUrl(url) }));
-    if (values.expect !== undefined) entries[0].expected = httpUrl(values.expect);
+    if (values.expect !== undefined) entries[0].expected = httpUrl(values.expect, entries[0].url);
   }
 
   const userAgent = `redirect-inspector/${version} (+https://github.com/idrisiRehan/websync-plugins)`;

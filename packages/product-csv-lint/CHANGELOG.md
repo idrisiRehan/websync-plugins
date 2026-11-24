@@ -18,4 +18,5 @@ All notable changes to `product-csv-lint` are recorded here. The format follows
 - CSV checks shared by both: UTF-8, BOM, mojibake hint, semicolon delimiter, unexpected and
   unterminated quotes, ragged rows, blank and duplicate headers, and typed cell values,
   including barcode check digits through `websync-validators`.
-- `product-csv-lint` CLI with platform detection, `--json` and `--max-warnings`.
+- `product-csv-lint` CLI with platform detection, `--json`, `--max-warnings` and a 50 MB read
+  cap enforced while reading.

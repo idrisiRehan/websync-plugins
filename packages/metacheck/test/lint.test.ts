@@ -321,7 +321,7 @@ describe("headings", () => {
     assert.deepEqual(lintMetadata(edit("<h2>Grip</h2>", "<h2>Grip</h2><h3>a</h3><h4>b</h4><h2>c</h2>")).findings, []);
   });
 
-  test("headings inside <svg> or <template> don't count", () => {
+  test("headings inside <template> don't count", () => {
     assert.deepEqual(lintMetadata(edit("<h2>Grip</h2>", "<template><h1>x</h1><h4>y</h4></template><h2>Grip</h2>")).findings, []);
   });
 });

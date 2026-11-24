@@ -18,4 +18,5 @@ All notable changes to `security-header-audit` are recorded here. The format fol
   objects in any letter case, or `[name, value]` pairs.
 - `rating` on the result: `strong`, `needs-work` or `weak`.
 - `normalizeHeaders()` and `parseRawHeaders()` (reads `curl -sI` / `curl -sIL` output).
-- `security-header-audit` CLI with `--json`, `--min-score`, `--raw` and `--timeout`.
+- `security-header-audit` CLI with `--json`, `--min-score`, `--raw` (capped at 1 MB) and
+  `--timeout`.

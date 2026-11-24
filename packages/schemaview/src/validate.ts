@@ -19,6 +19,7 @@ export type RuleId =
   | "type-invalid"
   | "id-conflict"
   | "type-deprecated"
+  | "type-ineligible"
   | "property-required"
   | "property-recommended"
   | "list-too-short"
@@ -257,7 +258,11 @@ function checkShape(ctx: Context, node: JsonNode, shape: Shape, feature: string,
     values.forEach((value, i) => {
       const types = value.kind === "object" ? (typesOf(value) ?? []) : [];
       const chosen = shapes.find((s) => s.types?.some((t) => types.includes(t))) ?? shapes.find((s) => !s.types);
-      if (chosen) checkShape(ctx, value, chosen, feature, i === values.length - 1);
+      if (chosen?.ineligible) {
+        ctx.report("type-ineligible", "warning", `${key} has @type ${types.join(", ")}. ${chosen.ineligible}`, value.line, ctx.paths.get(value));
+      } else if (chosen) {
+        checkShape(ctx, value, chosen, feature, i === values.length - 1);
+      }
     });
   }
 }

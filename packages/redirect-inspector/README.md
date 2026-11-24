@@ -43,7 +43,8 @@ redirect-inspector <url...> [options]
 redirect-inspector --map <file> [options]
 
   --json               Print the results as a JSON array
-  --expect <url>       Exit with code 1 unless the chain ends at this URL (one URL only)
+  --expect <url>       Exit with code 1 unless the chain ends at this URL (one URL only;
+                       a path such as /new is resolved against that URL)
   --map <file>         Check a redirect map: one "from-url target-url" pair per line
   --max-hops <n>       Redirects to follow before stopping (default 10)
   --timeout <ms>       Timeout for each request in milliseconds (default 10000)
@@ -189,6 +190,7 @@ Standard's [redirect status](https://fetch.spec.whatwg.org/#redirect-status)).
 | `location-missing` | error | A redirect with no `Location` header ([RFC 9110 s15.4.2-15.4.9](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.4.2)) |
 | `location-invalid` | error | `Location` can't be parsed as a URL. Relative values are legal and resolved against the request URL ([RFC 9110 s10.2.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.2)), so they aren't flagged |
 | `location-scheme` | error | `Location` points to something other than http or https, such as `ftp:` or `javascript:` |
+| `location-multiple` | error | The response sends `Location` more than once with different values. Chrome refuses the redirect (`ERR_RESPONSE_HEADERS_MULTIPLE_LOCATION`) and other clients may follow either one. Repeats of the same value are accepted |
 | `redirect-loop` | error | A redirect back to a URL already in the chain ([RFC 9110 s15.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.4): clients should detect cyclical redirections) |
 | `too-many-hops` | error | Still redirecting after `maxHops` redirects (default 10, the number [Google's crawlers follow](https://developers.google.com/search/docs/crawling-indexing/http-network-errors)) |
 | `https-downgrade` | error | A redirect from `https:` to `http:` |

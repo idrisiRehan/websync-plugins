@@ -280,6 +280,7 @@ checked on 2026-11-24.
 | `h1-multiple` | warning | More than one H1 |
 | `heading-level` | warning | An H3 to H6. The details before the first H2 may contain [anything except headings](https://llmstxt.org/#format), and sections are flat link lists under an H2 |
 | `heading-space` | warning | A line like `#Title` or `##Docs`, which markdown doesn't treat as a heading |
+| `heading-setext` | error or warning | A heading made by underlining with `===` or `---`. Markdown reads it, but llms.txt tools, including the [llmstxt.org Python module](https://llmstxt.org/core.html), split the file on `#` lines only. An error for the H1, a warning otherwise |
 | `summary-misplaced` | warning | No summary right after the H1, but a blockquote further down that looks like one |
 | `section-empty` | warning | An H2 section with nothing in it |
 | `section-content` | warning | A section holds something other than list items (a paragraph, a quote, a code block). Reported once per section |
@@ -307,8 +308,8 @@ Errors are printed to stderr as one line, prefixed `llms-txt-kit:`.
 
 - **The links aren't fetched.** A clean file can still link to pages that return 404. The spec
   also says links should point to LLM-friendly content such as `.md` pages; that isn't checked.
-- **Only ATX headings (`# Title`) are recognised.** A setext H1 (a title underlined with `===`)
-  is reported as `h1-missing`.
+- **Setext headings are read one line at a time.** A heading underlined with `===` or `---` is
+  recognised (and reported as `heading-setext`) when the text above the underline is one line.
 - **Link syntax is the common subset.** A URL may contain one level of balanced parentheses but
   no spaces; `<url>` and link titles (`[a](https://example.com "title")`) are not supported, nor is `]` inside a
   link name.

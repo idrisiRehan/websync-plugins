@@ -2,7 +2,7 @@
 // Command-line front end: read a product CSV (file or stdin), lint it with lintProductCsv(),
 // print the findings. All rules live in core.ts and the platform modules.
 
-import { readFileSync } from "node:fs";
+import { createReadStream, readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import type { ProductCsvResult } from "./core.ts";
 import { detectPlatform, lintProductCsv, type Platform } from "./lint.ts";
@@ -22,6 +22,10 @@ Options:
   -v, --version        Show the version
 
 Exit codes: 0 no errors, 1 errors (or too many warnings), 2 usage or input error.`;
+
+/** Largest CSV read, well above Shopify's 15 MB import limit. */
+const MAX_BYTES = 50 * 1024 * 1024;
+const TOO_LARGE = `The file is larger than ${MAX_BYTES / (1024 * 1024)} MB, so it was not linted.`;
 
 const LABEL = { error: "ERROR", warning: "WARN ", info: "INFO " } as const;
 const PLATFORMS: Platform[] = ["shopify", "woocommerce"];
@@ -46,7 +50,19 @@ function formatText(label: string, result: ProductCsvResult): string {
   return lines.join("\n");
 }
 
-function main(argv: string[]): number {
+/** Reads a stream but stops once it passes MAX_BYTES, so a huge or endless input can't exhaust memory. */
+async function readCapped(stream: AsyncIterable<Uint8Array>): Promise<Buffer> {
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for await (const chunk of stream) {
+    total += chunk.byteLength;
+    if (total > MAX_BYTES) throw new Error(TOO_LARGE); // leaving the loop cancels the stream
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks, total);
+}
+
+async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
@@ -75,7 +91,7 @@ function main(argv: string[]): number {
   if (positionals.length !== 1) throw new UsageError("Give exactly one file, or - for stdin.");
 
   const path = positionals[0];
-  const bytes = readFileSync(path === "-" ? 0 : path);
+  const bytes = await readCapped(path === "-" ? process.stdin : createReadStream(path));
   const platform = (values.platform as Platform | undefined) ?? detectPlatform(bytes);
   if (!platform) throw new UsageError("Couldn't tell from the header row whether this is a Shopify or WooCommerce file. Pass --platform.");
 
@@ -95,9 +111,12 @@ function errorMessage(error: unknown): string {
   return error.message;
 }
 
-try {
-  process.exitCode = main(process.argv.slice(2));
-} catch (error) {
-  console.error(`product-csv-lint: ${errorMessage(error)}`);
-  process.exitCode = 2;
-}
+main(process.argv.slice(2)).then(
+  (code) => {
+    process.exitCode = code;
+  },
+  (error: unknown) => {
+    console.error(`product-csv-lint: ${errorMessage(error)}`);
+    process.exitCode = 2;
+  },
+);

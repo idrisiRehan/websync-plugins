@@ -26,6 +26,7 @@ export type RuleId =
   | "location-missing"
   | "location-invalid"
   | "location-scheme"
+  | "location-multiple"
   | "redirect-loop"
   | "too-many-hops"
   | "https-downgrade"
@@ -173,11 +174,19 @@ export async function inspectRedirects(url: string, options: InspectOptions = {}
       report("location-missing", "error", `${status} has no Location header, so clients have nowhere to go.`, hop);
       break;
     }
+    // fetch joins repeated headers with ", ", which a valid Location can't contain (spaces must
+    // be percent-encoded). Repeats of one value are harmless; different ones are refused by
+    // Chrome (ERR_RESPONSE_HEADERS_MULTIPLE_LOCATION), and other clients pick one.
+    const targets = [...new Set(location.split(", ").map((t) => t.trim()))];
+    if (targets.length > 1) {
+      report("location-multiple", "error", `${status} gives ${targets.length} different Locations (${targets.map((t) => `"${t}"`).join(", ")}). Chrome refuses the redirect, and other clients may follow either one. Send one Location header.`, hop);
+      break;
+    }
     // Location is a URI-reference; a relative one is resolved against the request URL
     // (RFC 9110 s10.2.2), so relative values are legal and are not reported.
     let next: URL;
     try {
-      next = new URL(location.trim(), current);
+      next = new URL(targets[0], current);
     } catch {
       report("location-invalid", "error", `Location "${location}" is not a valid URL.`, hop);
       break;

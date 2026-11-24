@@ -10,7 +10,7 @@ All notable changes to `llms-txt-kit` are recorded here. The format follows
 
 ### Added
 
-- `lintLlmsTxt()` with 17 rules from the llmstxt.org proposal (v2, checked 2026-11-24),
+- `lintLlmsTxt()` with 18 rules from the llmstxt.org proposal (v2, checked 2026-11-24),
   covering empty and HTML files, the H1, heading levels, the summary blockquote, sections, the
   `Optional` section, link syntax and notes, and invalid or duplicate URLs. Errors are kept for
   files a reader can't use; everything else is a warning. Each finding has a rule id and line.

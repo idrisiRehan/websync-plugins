@@ -172,7 +172,17 @@ describe("type-specific rules", () => {
 
   test("an AggregateOffer needs lowPrice and priceCurrency, not price", () => {
     const product = { "@type": "Product", name: "P", image: IMG, aggregateRating: RATING, offers: { "@type": "AggregateOffer", lowPrice: "10", highPrice: "20", offerCount: 3 } };
-    assert.deepEqual(errors(ld(product)), ['$.offers.priceCurrency: Missing "priceCurrency", required for Product snippet and Merchant listing per Google\'s documentation.']);
+    assert.deepEqual(errors(ld(product)), ['$.offers.priceCurrency: Missing "priceCurrency", required for Product snippet per Google\'s documentation.']);
+  });
+
+  test("an AggregateOffer is fine for product snippets but not eligible for merchant listings", () => {
+    const product = { "@type": "Product", name: "P", image: IMG, aggregateRating: RATING, offers: { "@type": "AggregateOffer", lowPrice: "10", highPrice: "20", offerCount: 3, priceCurrency: "EUR" } };
+    const r = ld(product);
+    assert.deepEqual(errors(r), []);
+    assert.deepEqual(
+      r.findings.filter((f) => f.rule === "type-ineligible").map((f) => [f.severity, f.path, f.message]),
+      [["warning", "$.offers", "offers has @type AggregateOffer. Merchant listings need an Offer, because the merchant must be the seller. AggregateOffer still works for product snippets."]],
+    );
   });
 
   test("nested reviews and ratings are checked without itemReviewed", () => {

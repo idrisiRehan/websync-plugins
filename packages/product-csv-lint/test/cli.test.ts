@@ -21,6 +21,8 @@ function run(args: string[], stdin = ""): Promise<{ code: number | null; stdout:
     child.stderr.on("data", (d) => (stderr += d));
     child.on("error", reject);
     child.on("close", (code) => resolve({ code, stdout, stderr }));
+    // The CLI stops reading at its size cap, so writing the rest can fail with EPIPE.
+    child.stdin.on("error", () => {});
     child.stdin.end(stdin);
   });
 }
@@ -87,6 +89,12 @@ describe("CLI", () => {
       const r = await run(args);
       assert.equal(r.code, 2, args.join(" "));
     }
+  });
+
+  test("stdin over 50 MB exits 2 without reading it all", async () => {
+    const r = await run(["-"], "a".repeat(50 * 1024 * 1024 + 1));
+    assert.equal(r.code, 2);
+    assert.match(r.stderr, /larger than 50 MB/);
   });
 
   test("--version and --help", async () => {

@@ -63,7 +63,8 @@ product-csv-lint <file | -> [options]
 ```
 
 Exit codes: `0` no errors, `1` errors (or more warnings than `--max-warnings`), `2` usage or
-input error, including a header row that matches neither platform when `--platform` isn't given.
+input error, including a file over 50 MB and a header row that matches neither platform when
+`--platform` isn't given.
 
 ```sh
 npx product-csv-lint products_export.csv

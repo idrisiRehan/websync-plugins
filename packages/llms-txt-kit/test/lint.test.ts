@@ -224,6 +224,43 @@ describe("heading rules", () => {
     assert.match(only(r, "heading-space").message, /"# Title"/);
   });
 
+  test("heading-setext: underlined headings are read, and reported because llms.txt tools only read #", () => {
+    const r = lintLlmsTxt(`Project
+=======
+
+> Summary
+
+Docs
+----
+- [A](https://e.com/a)
+`);
+    assert.deepEqual(r.findings.map((f) => [f.rule, f.severity, f.line]), [["heading-setext", "error", 1], ["heading-setext", "warning", 6]]);
+    assert.match(r.findings[0].message, /write "# Project"/);
+    assert.match(r.findings[1].message, /write "## Docs"/);
+    assert.equal(r.doc.title, "Project");
+    assert.equal(r.doc.summary, "Summary");
+    assert.deepEqual(r.doc.sections.map((s) => [s.title, s.links.length]), [["Docs", 1]]);
+  });
+
+  test("heading-setext: a rule after a blank line, a list item or inside code is not an underline", () => {
+    const r = lintLlmsTxt(`# T
+
+Details
+
+---
+
+## Docs
+- [A](https://e.com/a)
+-
+
+\`\`\`
+code
+===
+\`\`\`
+`);
+    assert.deepEqual(rules(r), ["link-malformed", "section-content"]);
+  });
+
   test("heading-space in a section is reported instead of section-content", () => {
     const r = lintLlmsTxt("# T\n\n## Docs\n\n##More\n- [A](https://e.com/a)\n");
     assert.equal(only(r, "heading-space").line, 5);

@@ -173,6 +173,20 @@ describe("broken chains", () => {
     assert.equal(server.requests.some((req) => req.url === "/file"), false);
   });
 
+  test("two different Location headers are an error, and neither is followed", async () => {
+    const r = await inspectRedirects(`${base}/two-locations`);
+    assert.deepEqual(rules(r), ["location-multiple"]);
+    assert.match(r.findings[0].message, /2 different Locations \("\/ok", "\/elsewhere"\)\. Chrome refuses the redirect/);
+    assert.equal(r.hops.length, 1);
+    assert.equal(server.requests.some((req) => req.url === "/elsewhere"), false);
+  });
+
+  test("the same Location sent twice is followed", async () => {
+    const r = await inspectRedirects(`${base}/same-location-twice`);
+    assert.equal(r.errorCount, 0);
+    assert.equal(r.finalUrl, `${base}/ok`);
+  });
+
   test("a final 4xx or 5xx is an error", async () => {
     const missing = await inspectRedirects(`${base}/to-missing`);
     assert.equal(missing.finalStatus, 404);

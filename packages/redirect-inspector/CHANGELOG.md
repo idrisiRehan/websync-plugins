@@ -14,8 +14,8 @@ All notable changes to `redirect-inspector` are recorded here. The format follow
   recording each hop's status, `Location` and timing. Options for the hop limit (default 10,
   Google's crawler limit), a per-request timeout, `User-Agent`, `GET` or `HEAD`, and an
   injectable `fetch`.
-- 12 rules with stable ids, citing RFC 9110: request failures, missing, invalid and non-http
-  `Location` headers (relative values are resolved, not flagged), redirect loops, too many
+- 13 rules with stable ids, citing RFC 9110: request failures, missing, invalid, non-http and
+  conflicting `Location` headers (relative values are resolved, not flagged), redirect loops, too many
   hops, HTTPS downgrades, final 4xx/5xx and unfollowed 3xx statuses, temporary redirects,
   chains of more than one redirect, and HTTP that never reaches HTTPS.
 - `redirect-inspector` CLI for one or more URLs, with `--expect`, `--map` for redirect maps

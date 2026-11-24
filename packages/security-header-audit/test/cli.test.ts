@@ -25,6 +25,8 @@ function run(args: string[], stdin?: string): Promise<RunResult> {
     child.stderr.on("data", (d) => (stderr += d));
     child.on("error", reject);
     child.on("close", (code) => resolve({ code, stdout, stderr }));
+    // The CLI stops reading at its size cap, so writing the rest can fail with EPIPE.
+    child.stdin.on("error", () => {});
     child.stdin.end(stdin ?? "");
   });
 }
@@ -104,6 +106,13 @@ describe("CLI", () => {
     const r = await run(["--raw", "-"], "nothing useful here");
     assert.equal(r.code, 2);
     assert.match(r.stderr, /No headers found/);
+  });
+
+  test("--raw input over 1 MB exits 2", async () => {
+    const r = await run(["--raw", "-"], `X-A: b
+`.repeat(200_000));
+    assert.equal(r.code, 2);
+    assert.match(r.stderr, /larger than 1 MB/);
   });
 
   test("a request that exceeds --timeout exits 2 with a fixed message", async () => {

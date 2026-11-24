@@ -167,6 +167,7 @@ that property.
 | | `review` | `author`, `author.name`, `reviewRating`, `reviewRating.ratingValue` | `datePublished` |
 | [Merchant listing](https://developers.google.com/search/docs/appearance/structured-data/merchant-listing) | `Product` with `offers` | `name`, `image`, `offers` | `description`, `brand.name`, a GTIN (`gtin`, `gtin8`, `gtin12`, `gtin13`, `gtin14` or `isbn`), `mpn`, `sku` |
 | | `offers` (Offer) | `price`, `priceCurrency` (or in `priceSpecification`) | `availability`, `itemCondition`, `shippingDetails`, `hasMerchantReturnPolicy` |
+| | `offers` (AggregateOffer) | not eligible: reported as `type-ineligible`, because the merchant must be the seller | |
 | [Review snippet](https://developers.google.com/search/docs/appearance/structured-data/review-snippet) | `Review` | `author`, `author.name`, `reviewRating`, `reviewRating.ratingValue`, `itemReviewed`, `itemReviewed.name` | `datePublished` |
 | | `AggregateRating` | `ratingValue`, `ratingCount` or `reviewCount`, `itemReviewed`, `itemReviewed.name` | |
 | [Breadcrumb](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb) | `BreadcrumbList` (at any depth) | `itemListElement` (at least 2) | |
@@ -226,6 +227,7 @@ point at a node defined elsewhere on the page, and nodes that share an `@id` are
 | `type-invalid` | error | `@type` isn't a type name or an array of them |
 | `id-conflict` | warning | Two nodes share an `@id` but give the same property different values |
 | `type-deprecated` | warning | A type whose rich result Google no longer shows |
+| `type-ineligible` | warning | A value type the feature doesn't accept, such as an `AggregateOffer` for merchant listings |
 | `property-required` | error | A property Google's documentation requires for a matched feature is missing |
 | `property-recommended` | warning | A property Google's documentation recommends is missing |
 | `list-too-short` | error | Fewer items than the feature needs (a breadcrumb trail of one) |

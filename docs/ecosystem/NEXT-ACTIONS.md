@@ -39,7 +39,7 @@ Scope: plugin packages in this repository only. The WebSync website is not chang
 
 ## Stopping point (2026-11-24, end of day)
 
-The repository is committed. `npm run check` passes (1,067 tests across nine packages).
+The repository is committed. `npm run check` passes (1,078 tests across nine packages).
 Nothing has been published or pushed. Nine packages are ready to release:
 `security-header-audit`, `sitemap-lint`, `product-csv-lint`, `metacheck`, `schemaview`,
 `llms-txt-kit`, `redirect-inspector` and `websync-mcp` at 1.0.0, and `websync-validators` 1.1.0.

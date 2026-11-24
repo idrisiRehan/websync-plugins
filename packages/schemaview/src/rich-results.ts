@@ -22,6 +22,8 @@ export interface Shape {
   minItems?: number;
   /** Shapes for the values of nested properties. */
   properties?: Readonly<Record<string, Shape | readonly Shape[]>>;
+  /** Values of `types` don't qualify for the feature. Reported as a warning with this reason, not checked further. */
+  ineligible?: string;
 }
 
 export interface RichResultType extends Shape {
@@ -123,7 +125,10 @@ export const RICH_RESULT_TYPES: readonly RichResultType[] = [
     recommended: ["description", "brand.name", "gtin|gtin8|gtin12|gtin13|gtin14|isbn", "mpn", "sku"],
     properties: {
       offers: [
-        AGGREGATE_OFFER,
+        {
+          types: ["AggregateOffer"],
+          ineligible: "Merchant listings need an Offer, because the merchant must be the seller. AggregateOffer still works for product snippets.",
+        },
         { required: [PRICE, PRICE_CURRENCY], recommended: ["availability", "itemCondition", "shippingDetails", "hasMerchantReturnPolicy"] },
       ],
     },

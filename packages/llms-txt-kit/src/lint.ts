@@ -13,6 +13,7 @@ export type RuleId =
   | "h1-multiple"
   | "heading-level"
   | "heading-space"
+  | "heading-setext"
   | "summary-misplaced"
   | "section-empty"
   | "section-content"
@@ -79,7 +80,7 @@ export interface LintOptions {
 
 type Line =
   | { kind: "blank" | "text" | "quote" | "code" | "no-space"; raw: string }
-  | { kind: "heading"; raw: string; level: number; text: string }
+  | { kind: "heading"; raw: string; level: number; text: string; setext?: boolean }
   | { kind: "item"; raw: string; text: string };
 
 type Report = (rule: RuleId, severity: Severity, message: string, line: number | null) => void;
@@ -90,6 +91,8 @@ const HEADING = /^ {0,3}(#{1,6})(?:[ \t]+|$)(.*)$/s;
 // Runs on trimmed heading text. A single [ \t], so a long run of spaces can't make it backtrack.
 const HEADING_CLOSE = /(?:^|[ \t])#+$/;
 const HEADING_NO_SPACE = /^ {0,3}#{1,6}[^#\s]/;
+// CommonMark setext underline: "=" makes the text line above an H1, "-" an H2.
+const SETEXT_UNDERLINE = /^ {0,3}(?:=+|-+)[ \t]*$/;
 // A backtick fence's info string can't hold a backtick, so "```npm test``` runs it" is inline code.
 const FENCE = /^ {0,3}(`{3,}(?=[^`]*$)|~{3,})/;
 const QUOTE = /^ {0,3}>/;
@@ -103,9 +106,14 @@ const PLACEHOLDER_BASE = "https://llms-txt.invalid/";
 const PLACEHOLDER_ORIGIN = new URL(PLACEHOLDER_BASE).origin;
 const OPTIONAL = "Optional";
 
+/** A line that would start or continue a paragraph, so an underline below it makes it a heading. */
+function isParagraphLine(raw: string): boolean {
+  return raw.trim() !== "" && ![FENCE, HEADING, HEADING_NO_SPACE, QUOTE, LIST_ITEM, SETEXT_UNDERLINE].some((re) => re.test(raw));
+}
+
 function classify(lines: string[]): Line[] {
   let fence: string | null = null;
-  return lines.map((raw): Line => {
+  return lines.map((raw, i, all): Line => {
     const fenceMatch = FENCE.exec(raw);
     if (fence !== null) {
       if (fenceMatch && fenceMatch[1][0] === fence[0] && fenceMatch[1].length >= fence.length && raw.trim() === fenceMatch[1]) fence = null;
@@ -116,6 +124,12 @@ function classify(lines: string[]): Line[] {
       return { kind: "code", raw };
     }
     if (raw.trim() === "") return { kind: "blank", raw };
+    // A text line underlined by the next line. The underline itself is read as a blank line.
+    const next = all[i + 1];
+    if (next !== undefined && SETEXT_UNDERLINE.test(next) && isParagraphLine(raw)) {
+      return { kind: "heading", raw, level: next.trim()[0] === "=" ? 1 : 2, text: raw.trim(), setext: true };
+    }
+    if (SETEXT_UNDERLINE.test(raw) && i > 0 && isParagraphLine(all[i - 1])) return { kind: "blank", raw };
     const heading = HEADING.exec(raw);
     if (heading) return { kind: "heading", raw, level: heading[1].length, text: heading[2].trim().replace(HEADING_CLOSE, "").trim() };
     if (HEADING_NO_SPACE.test(raw)) return { kind: "no-space", raw };
@@ -244,6 +258,13 @@ export function lintLlmsTxt(text: string, options: LintOptions = {}): LlmsTxtRes
     report("file-html", "error", "This is HTML, not markdown. A server often sends an HTML 404 page or app shell when /llms.txt is missing.", firstContent + 1);
     return finish();
   }
+
+  lines.forEach((l, j) => {
+    if (l.kind !== "heading" || !l.setext) return;
+    const atx = `${"#".repeat(l.level)} ${l.text}`;
+    // An error for the H1, the one required part, because tools that split on "#" won't find it.
+    report("heading-setext", l.level === 1 ? "error" : "warning", `"${l.text}" is underlined to make it a heading. llms.txt tools, including the llmstxt.org Python module, only read "#" headings; write "${atx}".`, j + 1);
+  });
 
   const isHeading = (l: Line, level: number) => l.kind === "heading" && l.level === level;
   const h1 = lines.findIndex((l) => isHeading(l, 1));

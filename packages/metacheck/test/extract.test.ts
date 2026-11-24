@@ -139,8 +139,28 @@ describe("head and body placement", () => {
   });
 
   test("self-closing <svg/> doesn't swallow what follows", () => {
-    const page = scanPage("<body><svg/><h1>x</h1><svg><title>tip</title><h2>no</h2></svg><h2>y</h2>");
+    const page = scanPage("<body><svg/><h1>x</h1><svg><title>tip</title><text>label</text></svg><h2>y</h2>");
     assert.deepEqual(page.headings.map((h) => h.text), ["x", "y"]);
+    assert.deepEqual(page.titles, []);
+  });
+
+  test("an HTML tag like <h2> or <p> ends unclosed <svg> or <math>, as in browsers", () => {
+    const page = scanPage("<body><svg><path d=M0><h2>a</h2><math><mi>x</mi><p>b</p><h3>c</h3>");
+    assert.deepEqual(page.headings.map((h) => h.text), ["a", "c"]);
+    // A <meta> breaks out too, so it is still found (in the body).
+    assert.deepEqual(scanPage("<body><svg><g><meta name=description content=d>").metas.map((m) => [m.attrs.name, m.inHead]), [["description", false]]);
+  });
+
+  test("<font> breaks out of <svg> only with color, face or size", () => {
+    assert.deepEqual(scanPage("<body><svg><font><h1>a</h1></svg>").headings.map((h) => h.text), ["a"]);
+    // A <title> after the break is an HTML title; inside the <svg> it is an SVG tooltip.
+    assert.equal(scanPage("<body><svg><font size=2></font><title>t</title>").titles.length, 1);
+    assert.equal(scanPage("<body><svg><font></font><title>tip</title></svg>").titles.length, 0);
+  });
+
+  test("HTML inside <foreignObject> or a MathML <mi> stays in the foreign content", () => {
+    const page = scanPage("<body><svg><foreignObject><div><h1>in</h1></div></foreignObject><title>tip</title></svg><math><mi><b>x</b></mi></math><h2>out</h2>");
+    assert.deepEqual(page.headings.map((h) => h.text), ["out"]);
     assert.deepEqual(page.titles, []);
   });
 

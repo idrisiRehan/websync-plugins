@@ -11,7 +11,7 @@ export interface TestServer {
   close: () => void;
 }
 
-const REDIRECTS: Record<string, [number, string]> = {
+const REDIRECTS: Record<string, [number, string | string[]]> = {
   "/301": [301, "/ok"],
   "/302": [302, "/ok"],
   "/303": [303, "/ok"],
@@ -32,6 +32,8 @@ const REDIRECTS: Record<string, [number, string]> = {
   "/bad-location": [301, "http://bad host/"],
   "/ftp-location": [302, "ftp://example.com/file"],
   "/multiple-choices": [300, "/ok"],
+  "/two-locations": [301, ["/ok", "/elsewhere"]],
+  "/same-location-twice": [301, ["/ok", "/ok"]],
 };
 
 export async function startServer(): Promise<TestServer> {
@@ -42,7 +44,9 @@ export async function startServer(): Promise<TestServer> {
     const redirect = REDIRECTS[path];
     const countdown = /^\/n\/(\d+)$/.exec(path);
     if (redirect) {
-      res.writeHead(redirect[0], { location: redirect[1] });
+      // setHeader takes an array, which sends one Location header per value.
+      res.setHeader("location", redirect[1]);
+      res.writeHead(redirect[0]);
       res.end();
     } else if (countdown) {
       // /n/3 redirects to /n/2, /n/1, then /n/0 answers 200: n redirects in all.

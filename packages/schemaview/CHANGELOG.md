@@ -11,7 +11,7 @@ All notable changes to `schemaview` are recorded here. The format follows
 ### Added
 
 - `validateStructuredData()` for HTML pages (every `<script type="application/ld+json">`) and
-  raw JSON-LD, with 23 rules covering JSON syntax, `@context`, `@type`, `@graph` and nested
+  raw JSON-LD, with 24 rules covering JSON syntax, `@context`, `@type`, `@graph` and nested
   nodes, conflicting `@id`s, required and recommended properties, and value formats (ISO 8601
   dates and durations, absolute URLs, prices, ISO 4217 currencies, schema.org enumerations,
   rating bounds). Each finding has a rule id, line and JSONPath.

@@ -2,7 +2,7 @@
 // Command-line front end: get headers (from a URL, a file or stdin), grade them with
 // analyzeHeaders(), print the result. All grading logic lives in analyze.ts.
 
-import { readFileSync } from "node:fs";
+import { createReadStream, readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { analyzeHeaders, type HeaderAuditResult } from "./analyze.ts";
 import { normalizeHeaders, parseRawHeaders, type NormalizedHeaders } from "./headers.ts";
@@ -22,6 +22,10 @@ Options:
   -v, --version      Show the version
 
 Exit codes: 0 graded, 1 score below --min-score, 2 usage or network error.`;
+
+/** Largest raw header block read. Real header blocks are a few kilobytes. */
+const MAX_BYTES = 1024 * 1024;
+const TOO_LARGE = `The input is larger than ${MAX_BYTES / (1024 * 1024)} MB, so it is not a header block.`;
 
 const STATUS_LABEL = { passed: "PASS", warning: "WARN", failed: "FAIL" } as const;
 
@@ -62,8 +66,20 @@ async function fetchHeaders(url: URL, timeoutMs: number): Promise<Source> {
   return { label: `${response.url} (HTTP ${response.status})`, headers: normalizeHeaders(response.headers) };
 }
 
-function readRaw(file: string): Source {
-  const text = readFileSync(file === "-" ? 0 : file, "utf8");
+/** Reads a stream but stops once it passes MAX_BYTES, so a huge or endless input can't exhaust memory. */
+async function readCapped(stream: AsyncIterable<Uint8Array>): Promise<Buffer> {
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for await (const chunk of stream) {
+    total += chunk.byteLength;
+    if (total > MAX_BYTES) throw new Error(TOO_LARGE); // leaving the loop cancels the stream
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks, total);
+}
+
+async function readRaw(file: string): Promise<Source> {
+  const text = (await readCapped(file === "-" ? process.stdin : createReadStream(file))).toString("utf8");
   const headers = parseRawHeaders(text);
   if (Object.keys(headers).length === 0) throw new UsageError("No headers found in the input.");
   return { label: file === "-" ? "stdin" : file, headers };
@@ -109,7 +125,7 @@ async function main(argv: string[]): Promise<number> {
     throw new UsageError("Give exactly one URL, or --raw <file>.");
   }
 
-  const source = hasRaw ? readRaw(values.raw as string) : await fetchHeaders(toUrl(positionals[0]), timeout);
+  const source = hasRaw ? await readRaw(values.raw as string) : await fetchHeaders(toUrl(positionals[0]), timeout);
   const result = analyzeHeaders(source.headers);
 
   console.log(values.json ? JSON.stringify({ source: source.label, ...result }, null, 2) : formatText(source, result));
