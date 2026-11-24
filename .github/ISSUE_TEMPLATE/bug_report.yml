@@ -11,6 +11,7 @@ body:
         - security-header-audit
         - sitemap-lint
         - product-csv-lint
+        - websync-mcp
     validations:
       required: true
   - type: input

@@ -2,6 +2,31 @@
 
 Newest first. Decisions, milestones, discoveries and problems.
 
+## 2026-11-24 (night): websync-mcp 1.0.0 (R-9)
+
+- Local stdio MCP server with four tools over the four packages: `validate_identifier`,
+  `grade_security_headers`, `lint_sitemap`, `lint_product_csv`. All take text only, so
+  there is no network, filesystem or SSRF surface. They are annotated read-only, idempotent
+  and closed-world.
+- **Decision (ADR 0004):** implement the stdio JSON-RPC surface directly instead of depending
+  on `@modelcontextprotocol/sdk`, whose runtime pulls express, hono, cors, jose and more for
+  transports a stdio server doesn't use. The SDK is a dev dependency: its own Client and
+  StdioClientTransport drive the real server in the compliance test.
+- Protocol versions 2025-11-25 / 2025-06-18 / 2025-03-26 / 2024-11-05 (from the SDK's
+  `SUPPORTED_PROTOCOL_VERSIONS`). Bad arguments become `isError` tool results; unknown
+  tools and methods become JSON-RPC errors. Internal errors never include a message or stack.
+- Context hygiene for assistants: finding lists capped at 200 with `findingsOmitted`, and
+  `lint_sitemap` returns `locCount` instead of every URL.
+- stdio framing searches only each new chunk for newlines (linear on 50 MB messages) and
+  refuses messages over 128 MB.
+- Added the `websync-source` export condition to security-header-audit, sitemap-lint and
+  product-csv-lint so the server resolves all four from source in development.
+- npm arborist bug on the existing `node_modules` while adding the dev dependency (npm 10.7
+  and 11 both failed). Fixed by regenerating the lockfile from manifests in a scratch folder
+  and running `npm ci`. The old lockfiles were kept in the scratchpad, not deleted.
+- Verification: 33 tests (24 handler unit tests plus 9 SDK-client tests, including a
+  50,000-entry sitemap over stdio).
+
 ## 2026-11-24 (evening): product-csv-lint 1.0.0 (R-10)
 
 Owner: push tomorrow; today is for building plugins. Picked product-csv-lint next (matrix

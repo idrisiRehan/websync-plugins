@@ -1,0 +1,71 @@
+{
+  "name": "websync-mcp",
+  "version": "1.0.0",
+  "description": "Local MCP server (stdio) that gives AI assistants offline WebSync checks: business and product identifier validation, security header grading, sitemap linting and Shopify/WooCommerce product CSV linting. No network access.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "websync-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "websync-mcp": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --conditions=websync-source --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "ai",
+    "claude",
+    "llm",
+    "tools",
+    "validator",
+    "vat",
+    "iban",
+    "gtin",
+    "security-headers",
+    "sitemap",
+    "shopify",
+    "woocommerce"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://github.com/idrisiRehan/websync-plugins/tree/main/packages/websync-mcp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/websync-mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  },
+  "dependencies": {
+    "websync-validators": "^1.1.0",
+    "security-header-audit": "^1.0.0",
+    "sitemap-lint": "^1.0.0",
+    "product-csv-lint": "^1.0.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2"
+  }
+}
