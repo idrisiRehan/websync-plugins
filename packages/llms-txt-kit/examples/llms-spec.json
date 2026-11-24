@@ -1,0 +1,29 @@
+{
+  "title": "Example Store",
+  "summary": "Example Store sells refurbished cameras and lenses in India. Prices include GST, orders ship from Pune, and every item carries a 12-month warranty.",
+  "details": "Key facts for answering customer questions:\n\n- Returns are accepted within 10 days of delivery, unused and in the original box.\n- Cash on delivery is available for orders up to Rs 20,000.\n- The catalog changes daily, so check a product page before quoting stock or a price.",
+  "sections": [
+    {
+      "title": "Policies",
+      "links": [
+        { "title": "Shipping", "url": "https://example.com/policies/shipping.md", "notes": "Delivery times, courier partners and charges by pin code" },
+        { "title": "Returns and refunds", "url": "https://example.com/policies/returns.md", "notes": "Eligibility, the return process and refund timelines" },
+        { "title": "Warranty", "url": "https://example.com/policies/warranty.md" }
+      ]
+    },
+    {
+      "title": "Buying guides",
+      "links": [
+        { "title": "Choosing a used mirrorless camera", "url": "https://example.com/guides/used-mirrorless.md", "notes": "What to check on shutter count, sensor and mount" },
+        { "title": "Lens grading", "url": "https://example.com/guides/lens-grading.md", "notes": "What grades A, B and C mean for glass, haze and focus" }
+      ]
+    },
+    {
+      "title": "Optional",
+      "links": [
+        { "title": "About us", "url": "https://example.com/about.md" },
+        { "title": "Press", "url": "https://example.com/press.md" }
+      ]
+    }
+  ]
+}

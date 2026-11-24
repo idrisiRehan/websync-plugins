@@ -1,0 +1,25 @@
+# Example Store
+
+> Example Store sells refurbished cameras and lenses in India. Prices include GST, orders ship from Pune, and every item carries a 12-month warranty.
+
+Key facts for answering customer questions:
+
+- Returns are accepted within 10 days of delivery, unused and in the original box.
+- Cash on delivery is available for orders up to Rs 20,000.
+- The catalog changes daily, so check a product page before quoting stock or a price.
+
+## Policies
+
+- [Shipping](https://example.com/policies/shipping.md): Delivery times, courier partners and charges by pin code
+- [Returns and refunds](https://example.com/policies/returns.md): Eligibility, the return process and refund timelines
+- [Warranty](https://example.com/policies/warranty.md)
+
+## Buying guides
+
+- [Choosing a used mirrorless camera](https://example.com/guides/used-mirrorless.md): What to check on shutter count, sensor and mount
+- [Lens grading](https://example.com/guides/lens-grading.md): What grades A, B and C mean for glass, haze and focus
+
+## Optional
+
+- [About us](https://example.com/about.md)
+- [Press](https://example.com/press.md)

@@ -1,0 +1,21 @@
+# Example Store
+
+Refurbished cameras and lenses, shipped from Pune.
+
+> Example Store sells refurbished cameras and lenses in India.
+
+### Ordering
+
+## Policies
+
+- [Shipping](/policies/shipping.md): Delivery times and charges
+- [Returns](https://example.com/policies/returns.md) - Eligibility and refunds
+- https://example.com/policies/warranty.md
+- [Shipping again](/policies/shipping.md)
+
+## Guides
+
+## Optional Links
+
+- [About us](https://example.com/about.md)
+- [Contact](mailto:help@example.com)
