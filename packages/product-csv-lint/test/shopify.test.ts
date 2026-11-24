@@ -150,6 +150,26 @@ describe("values", () => {
     assert.deepEqual(one("Barcode", "080442957X"), []);
   });
 
+  test("Barcodes is a semicolon-separated list with optional type prefixes, checked entry by entry", () => {
+    assert.deepEqual(one("Barcodes", "4006381333931;upc:036000291452"), []);
+    assert.deepEqual(one("Barcodes", "gtin:4006381333931; ean:4006381333931;"), []);
+    const r = lint("Title,URL handle,Barcodes\nTee,tee,036000291452;upc:4006381333930");
+    const found = only(r, "value-barcode");
+    assert.equal(found.length, 1);
+    assert.equal(found[0].value, "4006381333930");
+    assert.equal(found[0].column, "Barcodes");
+    // The single Barcode column is still one barcode.
+    assert.deepEqual(one("Barcode", "4006381333931;036000291452"), ["value-barcode"]);
+  });
+
+  test("Barcodes: only GTIN, UPC, EAN and ISBN entries are checked; Custom, ASIN and NS-PID take any value", () => {
+    // Shopify's own sample file: the column is Variant Barcodes, and untyped entries are Custom.
+    const sample = lint("Title,URL handle,Variant Barcodes\nTee,tee,ean:4006381333931; upc:036000291452\n,tee,5784397766\n,tee,isbn:978-1-4028-9462-6");
+    assert.deepEqual(sample.findings, []);
+    assert.deepEqual(one("Barcodes", "INTERNAL-123;asin:B07XYZ1234;ns-pid:AC 100\\:2"), []);
+    assert.deepEqual(one("Variant Barcodes", "upc:036000291453"), ["value-barcode"]);
+  });
+
   test("compare-at price below price", () => {
     assert.deepEqual(rules(lint("Title,URL handle,Price,Compare-at price\nTee,tee,30,25")), ["compare-at-below-price"]);
     assert.deepEqual(rules(lint("Title,URL handle,Price,Compare-at price\nTee,tee,30,0")), []);
@@ -160,6 +180,14 @@ describe("products and variants", () => {
   test("duplicate SKUs are flagged on every row", () => {
     const r = lint("Title,URL handle,SKU,Option1 name,Option1 value\nTee,tee,X,Size,S\n,tee,X,Size,M");
     assert.deepEqual(only(r, "sku-duplicate").map((f) => f.row), [2, 3]);
+  });
+
+  test("a value repeated on thousands of rows names ten of the others, so reporting stays linear", () => {
+    const rows = Array.from({ length: 5000 }, (_, i) => `${i === 0 ? "Tee" : ""},tee,X,Size,${i}`);
+    const found = only(lint(["Title,URL handle,SKU,Option1 name,Option1 value", ...rows].join("\n")), "sku-duplicate");
+    assert.equal(found.length, 5000);
+    assert.match(found[0].message, /also on row 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 and 4989 more\./);
+    assert.match(found[4999].message, /also on row 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 and 4989 more\./);
   });
 
   test("a row without a handle", () => {

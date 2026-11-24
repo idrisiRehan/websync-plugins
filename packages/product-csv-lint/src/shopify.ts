@@ -9,18 +9,38 @@
 // rows with the same handle add variants (with option values) or extra images (with only
 // the handle and an image URL). Title is the only required column for new products.
 
-import { reportDuplicates, rowsOf, type ColumnRule, type PlatformRules, type Sheet, type Report } from "./core.ts";
+import { append, reportDuplicates, rowsOf, type ColumnRule, type PlatformRules, type Sheet, type Report } from "./core.ts";
 import type { CsvRecord } from "./csv.ts";
 
-const COL = {
+/** Every Shopify column this package reads, current name first. Exported for products.ts. */
+export const COL = {
   handle: ["URL handle", "Handle"],
   title: ["Title"],
+  description: ["Description", "Body (HTML)"],
+  vendor: ["Vendor"],
+  productCategory: ["Product category"],
+  type: ["Type"],
+  tags: ["Tags"],
+  published: ["Published on online store", "Published"],
+  status: ["Status"],
+  giftCard: ["Gift card", "Gift Card"],
+  seoDescription: ["SEO description"],
   sku: ["SKU", "Variant SKU"],
   price: ["Price", "Variant Price"],
   compareAt: ["Compare-at price", "Variant Compare At Price"],
-  barcode: ["Barcode", "Barcodes", "Variant Barcode"],
+  barcode: ["Barcode", "Variant Barcode"],
+  // The current format's list: up to 20 barcodes separated by semicolons, each optionally
+  // prefixed with its type ("upc:..."). It replaces the single Barcode column. The help page
+  // names it Barcodes; Shopify's own sample file (product_template.csv) has Variant Barcodes.
+  barcodes: ["Barcodes", "Variant Barcodes"],
+  inventoryTracker: ["Inventory tracker", "Variant Inventory Tracker"],
+  inventoryQuantity: ["Inventory quantity", "Variant Inventory Qty"],
+  inventoryPolicy: ["Continue selling when out of stock", "Variant Inventory Policy"],
   imageSrc: ["Product image URL", "Image Src"],
   imagePosition: ["Image position", "Image Position"],
+  variantImage: ["Variant image URL", "Variant Image"],
+  // A variant's own value: the sample file has a different MPN on each variant row.
+  mpn: ["Google Shopping / Manufacturer part number (MPN)", "Google Shopping / MPN"],
   optionName: [1, 2, 3].map((n) => [`Option${n} name`, `Option${n} Name`]),
   optionValue: [1, 2, 3].map((n) => [`Option${n} value`, `Option${n} Value`]),
 } as const;
@@ -30,22 +50,19 @@ const COLUMNS: ColumnRule[] = [
   { names: COL.compareAt, type: "decimal" },
   { names: ["Cost per item"], type: "decimal" },
   { names: ["Weight value (grams)", "Variant Grams"], type: "decimal" },
-  { names: ["Inventory quantity", "Variant Inventory Qty"], type: "integer" },
+  { names: COL.inventoryQuantity, type: "integer" },
   { names: COL.imagePosition, type: "integer" },
-  { names: ["Published on online store", "Published"], type: "boolean" },
+  { names: COL.published, type: "boolean" },
   { names: ["Charge tax", "Variant Taxable"], type: "boolean" },
   { names: ["Requires shipping", "Variant Requires Shipping"], type: "boolean" },
-  { names: ["Gift card", "Gift Card"], type: "boolean" },
-  { names: ["Status"], type: "enum", values: ["active", "draft", "archived"] },
-  { names: ["Continue selling when out of stock", "Variant Inventory Policy"], type: "enum", values: ["deny", "continue"] },
+  { names: COL.giftCard, type: "boolean" },
+  { names: COL.status, type: "enum", values: ["active", "draft", "archived"] },
+  { names: COL.inventoryPolicy, type: "enum", values: ["deny", "continue"] },
   { names: ["Weight unit for display", "Variant Weight Unit"], type: "enum", values: ["g", "kg", "lb", "oz"] },
   { names: COL.imageSrc, type: "url" },
-  { names: ["Variant image URL", "Variant Image"], type: "url" },
-  {
-    names: COL.barcode,
-    type: "barcode",
-    severity: "warning",
-  },
+  { names: COL.variantImage, type: "url" },
+  { names: COL.barcode, type: "barcode", severity: "warning" },
+  { names: COL.barcodes, type: "barcode", severity: "warning", list: true },
 ];
 
 const KNOWN = [
@@ -53,20 +70,18 @@ const KNOWN = [
   ...COL.handle,
   ...COL.title,
   ...COL.sku,
-  "Description",
-  "Body (HTML)",
-  "Vendor",
-  "Product category",
-  "Type",
-  "Tags",
+  ...COL.description,
+  ...COL.vendor,
+  ...COL.productCategory,
+  ...COL.type,
+  ...COL.tags,
   "Collection",
-  "Inventory tracker",
-  "Variant Inventory Tracker",
+  ...COL.inventoryTracker,
   "Fulfillment service",
   "Variant Fulfillment Service",
   "Image alt text",
   "SEO title",
-  "SEO description",
+  ...COL.seoDescription,
   "Variant Tax Code",
   "Packed product length",
   "Packed product width",
@@ -82,11 +97,11 @@ const KNOWN_PATTERNS = [
 ];
 
 // A row that only adds an image to the product above: no option values, SKU or price.
-function isVariantRow(sheet: Sheet, record: CsvRecord, h: Columns): boolean {
+export function isVariantRow(sheet: Sheet, record: CsvRecord, h: Columns): boolean {
   return h.optionValue.some((col) => sheet.cell(record, col) !== "") || sheet.cell(record, h.sku) !== "" || sheet.cell(record, h.price) !== "";
 }
 
-interface Columns {
+export interface Columns {
   handle?: string;
   title?: string;
   sku?: string;
@@ -95,6 +110,20 @@ interface Columns {
   imagePosition?: string;
   optionName: (string | undefined)[];
   optionValue: (string | undefined)[];
+}
+
+/** The headers this file uses for the columns the checks need. */
+export function findColumns(sheet: Sheet): Columns {
+  return {
+    handle: sheet.find(COL.handle),
+    title: sheet.find(COL.title),
+    sku: sheet.find(COL.sku),
+    price: sheet.find(COL.price),
+    compareAt: sheet.find(COL.compareAt),
+    imagePosition: sheet.find(COL.imagePosition),
+    optionName: COL.optionName.map((names) => sheet.find(names)),
+    optionValue: COL.optionValue.map((names) => sheet.find(names)),
+  };
 }
 
 function checkGroup(sheet: Sheet, group: CsvRecord[], h: Columns, report: Report): number {
@@ -119,24 +148,24 @@ function checkGroup(sheet: Sheet, group: CsvRecord[], h: Columns, report: Report
   const combos = new Map<string, CsvRecord[]>();
   for (const record of variants) {
     const combo = h.optionValue.map((col) => sheet.cell(record, col)).join("\u0000");
-    combos.set(combo, [...(combos.get(combo) ?? []), record]);
+    append(combos, combo, record);
   }
   for (const list of combos.values()) {
     if (list.length < 2) continue;
     for (const record of list) {
-      report("variant-duplicate", "error", `Same option values as row ${rowsOf(list.filter((r) => r !== record))} of this product, so Shopify can't tell the variants apart.`, { row: record.row });
+      report("variant-duplicate", "error", `Same option values as row ${rowsOf(list, record)} of this product, so Shopify can't tell the variants apart.`, { row: record.row });
     }
   }
 
   const positions = new Map<string, CsvRecord[]>();
   for (const record of group) {
     const pos = sheet.cell(record, h.imagePosition);
-    if (/^\d+$/.test(pos)) positions.set(pos, [...(positions.get(pos) ?? []), record]);
+    if (/^\d+$/.test(pos)) append(positions, pos, record);
   }
   for (const [pos, list] of positions) {
     if (list.length < 2) continue;
     for (const record of list) {
-      report("image-position-duplicate", "error", `Image position ${pos} is also used on row ${rowsOf(list.filter((r) => r !== record))} of this product.`, { row: record.row, column: h.imagePosition, value: pos });
+      report("image-position-duplicate", "error", `Image position ${pos} is also used on row ${rowsOf(list, record)} of this product.`, { row: record.row, column: h.imagePosition, value: pos });
     }
   }
 
@@ -144,16 +173,7 @@ function checkGroup(sheet: Sheet, group: CsvRecord[], h: Columns, report: Report
 }
 
 function check(sheet: Sheet, report: Report): { productCount: number; variantCount: number } {
-  const h: Columns = {
-    handle: sheet.find(COL.handle),
-    title: sheet.find(COL.title),
-    sku: sheet.find(COL.sku),
-    price: sheet.find(COL.price),
-    compareAt: sheet.find(COL.compareAt),
-    imagePosition: sheet.find(COL.imagePosition),
-    optionName: COL.optionName.map((names) => sheet.find(names)),
-    optionValue: COL.optionValue.map((names) => sheet.find(names)),
-  };
+  const h = findColumns(sheet);
 
   if (h.price && h.compareAt) {
     for (const record of sheet.records) {
@@ -180,7 +200,7 @@ function check(sheet: Sheet, report: Report): { productCount: number; variantCou
       report("handle-missing", "error", "Row has no URL handle, so Shopify can't tell which product it belongs to.", { row: record.row, column: h.handle });
       continue;
     }
-    groups.set(handle, [...(groups.get(handle) ?? []), record]);
+    append(groups, handle, record);
   }
 
   let variantCount = 0;

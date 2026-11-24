@@ -29,6 +29,27 @@ describe("clean file", () => {
     assert.equal(r.variantCount, 2);
   });
 
+  test("values the exporter writes are accepted: In stock? backorder, Published 2 (pending)", () => {
+    const one = (header: string, value: string) => rules(lint(`Type,SKU,Name,Regular price,${header}\nsimple,A,Mug,5,${value}`));
+    assert.deepEqual(one("In stock?", "backorder"), []);
+    assert.deepEqual(one("Published", "2"), []);
+    assert.deepEqual(one("Is featured?", "backorder"), ["value-flag"]);
+  });
+
+  test("the exporter's downloadable and virtual flags in Type are no unknown type", () => {
+    // WooCommerce's own sample_products.csv has "simple, downloadable, virtual".
+    const csv = CLEAN.replace("11,variation,", '11,"variation, downloadable, virtual",').replace("13,simple,", '13,"simple, virtual",');
+    const r = lint(csv);
+    assert.deepEqual(r.findings, []);
+    assert.equal(r.variantCount, 2);
+    assert.deepEqual(rules(lint("Type,SKU,Name,Regular price\nvirtual,A,Mug,5")), ["type-missing"]);
+  });
+
+  test("the exporter's default MPN and customs columns are known headers", () => {
+    const csv = 'Type,SKU,Name,Regular price,MPN,Commodity code (HS code),Country of origin,Customs description,Cost of goods\nsimple,A,Mug,5,M-1,6912,PT,Mug,2';
+    assert.deepEqual(lint(csv).findings, []);
+  });
+
   test("locale and unit header variants are known", () => {
     const csv = "Type,SKU,Name,Regular price,Visibility in catalogue,Weight (lbs),Meta: _custom,Download 1 URL\nsimple,A,Mug,5,visible,1,x,https://e.com/a.zip";
     assert.deepEqual(lint(csv).findings, []);
@@ -59,7 +80,7 @@ describe("values", () => {
   test("flags, enums and integers", () => {
     assert.deepEqual(one("In stock?", "maybe"), ["value-flag"]);
     assert.deepEqual(one("In stock?", "Yes"), []);
-    assert.deepEqual(one("Published", "2"), ["value-enum"]);
+    assert.deepEqual(one("Published", "3"), ["value-enum"]);
     assert.deepEqual(one("Tax status", "exempt"), ["value-enum"]);
     assert.deepEqual(one("Stock", "ten"), ["value-integer"]);
   });

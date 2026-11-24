@@ -81,8 +81,11 @@ export interface ColumnRule {
   names: readonly string[];
   type: ColumnType;
   severity?: Severity;
+  /** The allowed values of an "enum"; for a "flag", values accepted besides yes and no. */
   values?: readonly string[];
   hint?: string;
+  /** A "barcode" cell holding a typed list, like Shopify's Barcodes (see barcodeEntries). */
+  list?: boolean;
 }
 
 export interface Sheet {
@@ -131,11 +134,25 @@ const FLAG_VALUES = ["0", "1", "yes", "no", "true", "false"];
 // UTF-8 text decoded as Windows-1252 or Latin-1: é, è, â, and the curly quotes.
 const MOJIBAKE = /Ã©|Ã¨|Ã¢|â€™|â€œ|â€\x9d|Â /;
 
-export function rowsOf(list: CsvRecord[]): string {
-  return list.map((r) => r.row).join(", ");
+/** Adds `value` to the list under `key`. */
+export function append<K, V>(map: Map<K, V[]>, key: K, value: V): void {
+  const list = map.get(key);
+  if (list) list.push(value);
+  else map.set(key, [value]);
 }
 
-function makeSheet(headers: string[], records: CsvRecord[]): Sheet {
+// A finding names at most this many other rows, so a value repeated on thousands of rows is
+// still reported in linear time and space.
+const MAX_ROWS = 10;
+
+/** The rows in `list` other than `self` (one of them): "3, 7", or the first ten and "and 25 more". */
+export function rowsOf(list: CsvRecord[], self: CsvRecord): string {
+  const shown = list.slice(0, MAX_ROWS + 1).filter((r) => r !== self).slice(0, MAX_ROWS);
+  const more = list.length - 1 - shown.length;
+  return shown.map((r) => r.row).join(", ") + (more > 0 ? ` and ${more} more` : "");
+}
+
+export function makeSheet(headers: string[], records: CsvRecord[]): Sheet {
   const index = new Map<string, number>();
   headers.forEach((h, i) => {
     const key = h.toLowerCase();
@@ -165,13 +182,12 @@ export function reportDuplicates(sheet: Sheet, header: string | undefined, repor
   const seen = new Map<string, CsvRecord[]>();
   for (const record of sheet.records) {
     const value = sheet.cell(record, header);
-    if (value !== "") seen.set(value, [...(seen.get(value) ?? []), record]);
+    if (value !== "") append(seen, value, record);
   }
   for (const [value, list] of seen) {
     if (list.length < 2) continue;
     for (const record of list) {
-      const others = list.filter((r) => r !== record);
-      report(rule, "error", `Duplicate ${label} "${value}", also on row ${rowsOf(others)}. ${consequence}`, { row: record.row, column: header, value });
+      report(rule, "error", `Duplicate ${label} "${value}", also on row ${rowsOf(list, record)}. ${consequence}`, { row: record.row, column: header, value });
     }
   }
 }
@@ -195,6 +211,47 @@ function checkImages(value: string, row: number, column: string, report: Report)
   }
 }
 
+export interface BarcodeEntry {
+  /** The type prefix, lower-cased ("upc"), or "" for a barcode without one (a Custom barcode). */
+  type: string;
+  value: string;
+}
+
+/** The barcode types that are GTINs, or an ISBN (Shopify's barcode types page). */
+export const GS1_BARCODE_TYPES: readonly string[] = ["gtin", "upc", "ean", "isbn"];
+
+/**
+ * The barcodes in a cell of Shopify's Barcodes list: separated by semicolons, each optionally
+ * typed ("upc:012345678905"), with \\, \; and \: escaping a backslash, semicolon or colon
+ * (https://help.shopify.com/en/manual/products/import-export/using-csv).
+ */
+export function barcodeEntries(cell: string): BarcodeEntry[] {
+  const entries: BarcodeEntry[] = [];
+  let type = "";
+  let value = "";
+  let colon = false; // only an entry's first colon can end a type
+  const end = () => {
+    if (value.trim() !== "") entries.push({ type, value: value.trim() });
+    type = "";
+    value = "";
+    colon = false;
+  };
+  for (let i = 0; i < cell.length; i++) {
+    const ch = cell[i];
+    if (ch === "\\" && i + 1 < cell.length) value += cell[++i];
+    else if (ch === ";") end();
+    else if (ch === ":" && !colon) {
+      colon = true;
+      if (/^\s*[a-z][a-z0-9_-]*\s*$/i.test(value)) {
+        type = value.trim().toLowerCase();
+        value = "";
+      } else value += ch;
+    } else value += ch;
+  }
+  end();
+  return entries;
+}
+
 function isValidBarcode(value: string): { valid: boolean; reason: string } {
   const gtin = validateGtin(value);
   if (gtin.valid || validateIsbn(value).valid) return { valid: true, reason: "" };
@@ -214,9 +271,11 @@ function checkValue(rule: ColumnRule, value: string, row: number, column: string
     case "boolean":
       if (!/^(true|false)$/i.test(value)) report("value-boolean", severity, `"${value}" must be TRUE or FALSE.`, at);
       break;
-    case "flag":
-      if (!FLAG_VALUES.includes(value.toLowerCase())) report("value-flag", severity, `"${value}" isn't one of the yes/no values written here (${FLAG_VALUES.join(", ")}).`, at);
+    case "flag": {
+      const allowed = [...FLAG_VALUES, ...(rule.values ?? [])];
+      if (!allowed.includes(value.toLowerCase())) report("value-flag", severity, `"${value}" isn't one of the values written here (${allowed.join(", ")}).`, at);
       break;
+    }
     case "enum": {
       const allowed = rule.values ?? [];
       if (!allowed.some((v) => v.toLowerCase() === value.toLowerCase())) {
@@ -230,8 +289,13 @@ function checkValue(rule: ColumnRule, value: string, row: number, column: string
       }
       break;
     case "barcode": {
-      const result = isValidBarcode(value);
-      if (!result.valid) report("value-barcode", severity, `"${value}" isn't a valid GTIN, UPC, EAN or ISBN: ${result.reason}`, at);
+      // In a list, only the entries typed as a GTIN or ISBN are checked: an untyped one is a
+      // Custom barcode, and ASIN, NS-PID and the other types aren't GTINs.
+      const entries = rule.list ? barcodeEntries(value).filter((e) => GS1_BARCODE_TYPES.includes(e.type)).map((e) => e.value) : [value];
+      for (const entry of entries) {
+        const result = isValidBarcode(entry);
+        if (!result.valid) report("value-barcode", severity, `"${entry}" isn't a valid GTIN, UPC, EAN or ISBN: ${result.reason}`, { ...at, value: entry });
+      }
       break;
     }
     case "images":

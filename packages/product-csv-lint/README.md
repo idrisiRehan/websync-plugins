@@ -98,6 +98,30 @@ records; // [{ cells: string[], row }]
 issues;  // [{ kind: "quote-unexpected" | "quote-unterminated", row }]
 ```
 
+`readProducts()` reads an export into product records, using the same column names (current and
+legacy Shopify headers) and the same parent wiring as the linter. It reports nothing; lint the
+file for that. It is the reader behind
+[`product-feed-build`](https://www.npmjs.com/package/product-feed-build).
+
+```ts
+import { readProducts } from "product-csv-lint";
+
+const { products, unread } = readProducts(text, "shopify"); // a string, or UTF-8 bytes
+products[0].handle;       // Shopify URL handle ("" for WooCommerce, which has id and sku)
+products[0].status;       // "active", "draft", "archived" (Shopify); "active", "private", "draft", "pending" (WooCommerce)
+products[0].images;       // URLs in display order, main image first
+products[0].variants;     // [{ row, sku, options: [{ name, value }], price, salePrice, gtin, inventory, ... }]
+unread;                   // [{ row, reason }]: a row without a handle, a variation without its parent
+```
+
+One record per Shopify handle (product fields from its first row, variants from the rows with
+options, a SKU or a price, images from every row) or per WooCommerce product (variations
+attached through Parent, a simple product as its own single variant). Values are kept as
+written, except for the platforms' own conventions: Shopify's "Title: Default Title" placeholder
+option is dropped, a compare-at price above Price makes Price the sale price, a variant's `gtin`
+is the first barcode with a valid check digit (in a `Barcodes` list, GTIN, UPC, EAN and ISBN entries before untyped ones; never ASIN or NS-PID), a variant's `mpn` is the Google Shopping MPN on its own row, WooCommerce's `downloadable` and `virtual` flags are dropped from the type, and WooCommerce's exporter escapes (`\,` in
+lists, `\n` in descriptions, `'` before a formula character) are undone.
+
 ## Rules
 
 Severities: **error** means the import will fail or produce wrong data. **warning** means it
@@ -118,8 +142,8 @@ will import, but probably not as intended. **info** is worth a look.
 | `header-missing`, `header-recommended` | error, warning | A required or useful column is absent |
 | `header-unknown`, `header-blank`, `header-duplicate` | info, warning, error | Header problems |
 | `value-decimal`, `value-integer`, `value-boolean`, `value-flag`, `value-enum`, `value-url` | per column | A cell doesn't fit its column's type |
-| `value-barcode` | warning | Not a valid GTIN, UPC, EAN or ISBN check digit |
-| `sku-duplicate` | error | The same SKU on more than one row |
+| `value-barcode` | warning | Not a valid GTIN, UPC, EAN or ISBN check digit. Shopify's `Barcodes` list (`Variant Barcodes` in its sample file) separates barcodes with semicolons and may prefix each with its type (`upc:...`): entries typed `gtin`, `upc`, `ean` or `isbn` are checked, while untyped (Custom), ASIN, NS-PID and other types take any value ([Shopify](https://help.shopify.com/en/manual/products/details/barcodes)) |
+| `sku-duplicate` | error | The same SKU on more than one row (each finding names up to ten of the other rows) |
 
 ### Shopify
 
@@ -156,7 +180,11 @@ recommended, because without it every row becomes its own product.
   inventory policy (`deny`, `continue`), weight units, UTF-8 and commas. Shopify changes this
   format. If a current export is flagged, please open an issue.
 - **WooCommerce** rules follow the built-in Product CSV Importer and Exporter, checked against
-  an export in September 2026. Plugins add their own columns and product types, so those are
+  an export in September 2026 and against the exporter's source
+  ([class-wc-product-csv-exporter.php](https://github.com/woocommerce/woocommerce/blob/trunk/plugins/woocommerce/includes/export/class-wc-product-csv-exporter.php)):
+  it writes `backorder` in `In stock?`, `2` in `Published` for a product pending review, and
+  `downloadable` and `virtual` after the type (`simple, downloadable, virtual`), and its default
+  columns include `MPN` and the customs columns. Plugins add their own columns and product types, so those are
   reported as info or warnings, never errors.
 - **Only the file is checked.** Products already in your store aren't known, so a variation
   whose parent exists only in the store is a warning, not an error.

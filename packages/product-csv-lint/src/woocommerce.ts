@@ -12,26 +12,57 @@ import type { CsvRecord } from "./csv.ts";
 
 const PRODUCT_TYPES = ["simple", "variable", "variation", "grouped", "external"];
 const ATTRIBUTE = /^Attribute (\d+) (name|value\(s\)|visible|global|default)$/i;
+
 const VISIBILITY = ["visible", "catalog", "catalogue", "search", "hidden"];
 
+/** The WooCommerce columns products.ts reads, as the exporter names them. */
+export const COL = {
+  id: ["ID"],
+  type: ["Type"],
+  sku: ["SKU"],
+  name: ["Name"],
+  parent: ["Parent"],
+  published: ["Published"],
+  visibility: ["Visibility in catalog", "Visibility in catalogue"],
+  shortDescription: ["Short description"],
+  description: ["Description"],
+  saleStarts: ["Date sale price starts"],
+  saleEnds: ["Date sale price ends"],
+  stockStatus: ["In stock?"],
+  stock: ["Stock"],
+  backorders: ["Backorders allowed?"],
+  regularPrice: ["Regular price"],
+  salePrice: ["Sale price"],
+  categories: ["Categories"],
+  tags: ["Tags"],
+  brands: ["Brands"],
+  images: ["Images"],
+  gtin: ["GTIN, UPC, EAN, or ISBN"],
+  mpn: ["MPN"],
+} as const;
+
 const COLUMNS: ColumnRule[] = [
-  { names: ["ID"], type: "integer" },
-  { names: ["Stock"], type: "integer" },
+  { names: COL.id, type: "integer" },
+  { names: COL.stock, type: "integer" },
   { names: ["Low stock amount"], type: "integer" },
   { names: ["Position"], type: "integer" },
   { names: ["Download limit"], type: "integer" },
   { names: ["Download expiry days"], type: "integer" },
-  { names: ["Regular price"], type: "decimal" },
-  { names: ["Sale price"], type: "decimal" },
+  { names: COL.regularPrice, type: "decimal" },
+  { names: COL.salePrice, type: "decimal" },
   { names: ["External URL"], type: "url" },
-  { names: ["Images"], type: "images" },
-  { names: ["GTIN, UPC, EAN, or ISBN"], type: "barcode", severity: "warning" },
-  ...["Is featured?", "In stock?", "Sold individually?", "Allow customer reviews?", "Downloadable", "Virtual"].map(
+  { names: COL.images, type: "images" },
+  { names: COL.gtin, type: "barcode", severity: "warning" },
+  // The exporter writes "backorder" for a product on backorder, 1 or 0 otherwise
+  // (get_column_value_stock_status in class-wc-product-csv-exporter.php).
+  { names: COL.stockStatus, type: "flag", severity: "warning", values: ["backorder"] },
+  ...["Is featured?", "Sold individually?", "Allow customer reviews?", "Downloadable", "Virtual"].map(
     (name): ColumnRule => ({ names: [name], type: "flag", severity: "warning" }),
   ),
-  { names: ["Published"], type: "enum", severity: "warning", values: ["1", "0", "-1"], hint: "1 publishes the product, 0 makes it private and -1 leaves it as a draft." },
-  { names: ["Backorders allowed?"], type: "enum", severity: "warning", values: ["0", "1", "notify", "yes", "no"], hint: "notify allows a backorder and warns the customer." },
-  { names: ["Visibility in catalog", "Visibility in catalogue"], type: "enum", severity: "warning", values: VISIBILITY },
+  // The exporter writes 2 for a product pending review (get_column_value_published).
+  { names: COL.published, type: "enum", severity: "warning", values: ["1", "0", "-1", "2"], hint: "1 publishes the product, 0 makes it private, -1 leaves it as a draft and 2 pending review." },
+  { names: COL.backorders, type: "enum", severity: "warning", values: ["0", "1", "notify", "yes", "no"], hint: "notify allows a backorder and warns the customer." },
+  { names: COL.visibility, type: "enum", severity: "warning", values: VISIBILITY },
   { names: ["Tax status"], type: "enum", severity: "warning", values: ["taxable", "shipping", "none"] },
 ];
 
@@ -55,11 +86,18 @@ const KNOWN = [
   "Upsells",
   "Cross-sells",
   "Button text",
+  // Default export columns of current WooCommerce (get_default_column_names in
+  // class-wc-product-csv-exporter.php); Cost of goods only with that feature on.
+  ...COL.mpn,
+  "Commodity code (HS code)",
+  "Country of origin",
+  "Customs description",
+  "Cost of goods",
 ];
 
 const KNOWN_PATTERNS = [ATTRIBUTE, /^(Weight|Length|Width|Height) \(.+\)$/i, /^Meta: .+$/, /^Download \d+ (name|URL)$/i];
 
-function attributeSlots(headers: string[]): number[] {
+export function attributeSlots(headers: string[]): number[] {
   const slots = new Set<number>();
   for (const h of headers) {
     const m = ATTRIBUTE.exec(h);
@@ -68,17 +106,32 @@ function attributeSlots(headers: string[]): number[] {
   return [...slots].sort((a, b) => a - b);
 }
 
+/**
+ * The product type in a Type cell, lower-cased, or "". The exporter adds "downloadable" and
+ * "virtual" to the type as flags, like "simple, downloadable, virtual" (get_column_value_type in
+ * class-wc-product-csv-exporter.php).
+ */
+export function baseType(cell: string): string {
+  return cell.toLowerCase().split(",").map((t) => t.trim()).find((t) => t !== "" && t !== "downloadable" && t !== "virtual") ?? "";
+}
+
+/** The row a variation's Parent points at: "id:123" by ID, otherwise by SKU, then by ID. */
+export function findParent(ref: string, bySku: ReadonlyMap<string, CsvRecord>, byId: ReadonlyMap<string, CsvRecord>): CsvRecord | undefined {
+  const idRef = /^id:\s*(\d+)$/i.exec(ref);
+  return idRef ? byId.get(idRef[1]) : (bySku.get(ref) ?? byId.get(ref));
+}
+
 function check(sheet: Sheet, report: Report): { productCount: number; variantCount: number } {
   const col = {
-    id: sheet.find(["ID"]),
-    type: sheet.find(["Type"]),
-    sku: sheet.find(["SKU"]),
-    name: sheet.find(["Name"]),
-    parent: sheet.find(["Parent"]),
-    regular: sheet.find(["Regular price"]),
-    sale: sheet.find(["Sale price"]),
+    id: sheet.find(COL.id),
+    type: sheet.find(COL.type),
+    sku: sheet.find(COL.sku),
+    name: sheet.find(COL.name),
+    parent: sheet.find(COL.parent),
+    regular: sheet.find(COL.regularPrice),
+    sale: sheet.find(COL.salePrice),
   };
-  const typeOf = (record: CsvRecord) => sheet.cell(record, col.type).toLowerCase();
+  const typeOf = (record: CsvRecord) => baseType(sheet.cell(record, col.type));
   const slots = attributeSlots(sheet.headers);
   const attrName = (slot: number) => sheet.find([`Attribute ${slot} name`]);
   const attrValues = (slot: number) => sheet.find([`Attribute ${slot} value(s)`]);
@@ -94,9 +147,9 @@ function check(sheet: Sheet, report: Report): { productCount: number; variantCou
   if (col.type) {
     for (const record of sheet.records) {
       const type = sheet.cell(record, col.type);
-      if (type === "") {
+      if (typeOf(record) === "") {
         report("type-missing", "warning", "No product type. WooCommerce falls back to \"simple\", which is wrong for anything with variations.", { row: record.row, column: col.type });
-      } else if (!PRODUCT_TYPES.includes(type.toLowerCase())) {
+      } else if (!PRODUCT_TYPES.includes(typeOf(record))) {
         report("type-unknown", "warning", `"${type}" isn't one of WooCommerce's built-in types (${PRODUCT_TYPES.join(", ")}). Plugins add their own types, so check it isn't a typo.`, { row: record.row, column: col.type, value: type });
       }
     }
@@ -142,8 +195,7 @@ function check(sheet: Sheet, report: Report): { productCount: number; variantCou
         report("parent-missing", "error", "A variation needs a Parent: the parent's SKU, or id:123 for its product ID.", at);
         continue;
       }
-      const idRef = /^id:\s*(\d+)$/i.exec(parentRef);
-      const parent = idRef ? byId.get(idRef[1]) : (bySku.get(parentRef) ?? byId.get(parentRef));
+      const parent = findParent(parentRef, bySku, byId);
       if (!parent) {
         report("parent-not-found", "warning", `Parent "${parentRef}" matches no SKU or ID in this file. Fine if that product already exists in the store; otherwise the variation has nowhere to go.`, { ...at, value: parentRef });
         continue;

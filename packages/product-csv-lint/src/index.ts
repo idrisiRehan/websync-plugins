@@ -4,3 +4,6 @@ export type { Platform } from "./lint.ts";
 export { parseCsv } from "./csv.ts";
 export type { CsvIssue, CsvRecord, ParsedCsv } from "./csv.ts";
 export type { CsvFinding, ProductCsvResult, RuleId, Severity } from "./core.ts";
+// Product records read from an export, a building block for product-feed-build.
+export { readProducts } from "./products.ts";
+export type { Inventory, Product, ProductOption, ProductVariant, ProductsResult } from "./products.ts";
