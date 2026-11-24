@@ -155,5 +155,5 @@ issues.
 | sitemap-lint (planned) | Stable protocol (sitemaps.org 0.9) | under 1 hour a month |
 | Repository | Dependabot PRs (dev dependencies and Actions only), CI breakage | about 1 hour a month |
 
-Five or more packages would be a lot for one maintainer at this point. That's
-why the shortlist stops at three.
+Five or more packages would be a lot for one maintainer at this point. That's why the first
+shortlist stopped at three (later extended on the owner's request; see ROADMAP.md).
