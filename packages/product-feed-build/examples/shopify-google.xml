@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>Northline Outdoor</title>
+    <link>https://shop.example.com/</link>
+    <description>Product feed for Google Merchant Center</description>
+    <item>
+      <g:id>TRAIL-BLK-10</g:id>
+      <g:title>Northline trail running shoes, Black, 10</g:title>
+      <g:description>Waterproof trail shoes with a grippy rubber outsole &amp; a breathable mesh lining.
+Weight: 290 g per shoe
+Heel-to-toe drop: 6 mm</g:description>
+      <g:link>https://shop.example.com/products/trail-running-shoes</g:link>
+      <g:image_link>https://cdn.example.com/files/trail-black.jpg</g:image_link>
+      <g:additional_image_link>https://cdn.example.com/files/trail-side.jpg</g:additional_image_link>
+      <g:additional_image_link>https://cdn.example.com/files/trail-sole.jpg</g:additional_image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>99.00 USD</g:price>
+      <g:sale_price>79.99 USD</g:sale_price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345670010</g:gtin>
+      <g:item_group_id>trail-running-shoes</g:item_group_id>
+      <g:item_group_title>Northline trail running shoes</g:item_group_title>
+      <g:product_type>Running shoes</g:product_type>
+      <g:color>Black</g:color>
+      <g:size>10</g:size>
+      <g:gender>unisex</g:gender>
+      <g:age_group>adult</g:age_group>
+    </item>
+    <item>
+      <g:id>TRAIL-BLK-11</g:id>
+      <g:title>Northline trail running shoes, Black, 11</g:title>
+      <g:description>Waterproof trail shoes with a grippy rubber outsole &amp; a breathable mesh lining.
+Weight: 290 g per shoe
+Heel-to-toe drop: 6 mm</g:description>
+      <g:link>https://shop.example.com/products/trail-running-shoes</g:link>
+      <g:image_link>https://cdn.example.com/files/trail-black.jpg</g:image_link>
+      <g:additional_image_link>https://cdn.example.com/files/trail-side.jpg</g:additional_image_link>
+      <g:additional_image_link>https://cdn.example.com/files/trail-sole.jpg</g:additional_image_link>
+      <g:availability>out_of_stock</g:availability>
+      <g:price>99.00 USD</g:price>
+      <g:sale_price>79.99 USD</g:sale_price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345670027</g:gtin>
+      <g:item_group_id>trail-running-shoes</g:item_group_id>
+      <g:item_group_title>Northline trail running shoes</g:item_group_title>
+      <g:product_type>Running shoes</g:product_type>
+      <g:color>Black</g:color>
+      <g:size>11</g:size>
+      <g:gender>unisex</g:gender>
+      <g:age_group>adult</g:age_group>
+    </item>
+    <item>
+      <g:id>TRAIL-GRY-10</g:id>
+      <g:title>Northline trail running shoes, Grey, 10</g:title>
+      <g:description>Waterproof trail shoes with a grippy rubber outsole &amp; a breathable mesh lining.
+Weight: 290 g per shoe
+Heel-to-toe drop: 6 mm</g:description>
+      <g:link>https://shop.example.com/products/trail-running-shoes</g:link>
+      <g:image_link>https://cdn.example.com/files/trail-grey.jpg</g:image_link>
+      <g:additional_image_link>https://cdn.example.com/files/trail-side.jpg</g:additional_image_link>
+      <g:additional_image_link>https://cdn.example.com/files/trail-sole.jpg</g:additional_image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>89.99 USD</g:price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345670034</g:gtin>
+      <g:item_group_id>trail-running-shoes</g:item_group_id>
+      <g:item_group_title>Northline trail running shoes</g:item_group_title>
+      <g:product_type>Running shoes</g:product_type>
+      <g:color>Grey</g:color>
+      <g:size>10</g:size>
+      <g:gender>unisex</g:gender>
+      <g:age_group>adult</g:age_group>
+    </item>
+    <item>
+      <g:id>TRAIL-GRY-11</g:id>
+      <g:title>Northline trail running shoes, Grey, 11</g:title>
+      <g:description>Waterproof trail shoes with a grippy rubber outsole &amp; a breathable mesh lining.
+Weight: 290 g per shoe
+Heel-to-toe drop: 6 mm</g:description>
+      <g:link>https://shop.example.com/products/trail-running-shoes</g:link>
+      <g:image_link>https://cdn.example.com/files/trail-grey.jpg</g:image_link>
+      <g:additional_image_link>https://cdn.example.com/files/trail-side.jpg</g:additional_image_link>
+      <g:additional_image_link>https://cdn.example.com/files/trail-sole.jpg</g:additional_image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>89.99 USD</g:price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345670041</g:gtin>
+      <g:item_group_id>trail-running-shoes</g:item_group_id>
+      <g:item_group_title>Northline trail running shoes</g:item_group_title>
+      <g:product_type>Running shoes</g:product_type>
+      <g:color>Grey</g:color>
+      <g:size>11</g:size>
+      <g:gender>unisex</g:gender>
+      <g:age_group>adult</g:age_group>
+    </item>
+    <item>
+      <g:id>MUG-350-BLU</g:id>
+      <g:title>Northline stoneware mug, 350 ml</g:title>
+      <g:description>Dishwasher-safe glazed stoneware mug with a wide handle. Holds 350 ml.</g:description>
+      <g:link>https://shop.example.com/products/stoneware-mug-350</g:link>
+      <g:image_link>https://cdn.example.com/files/mug-blue.jpg</g:image_link>
+      <g:additional_image_link>https://cdn.example.com/files/mug-blue-side.jpg</g:additional_image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>18.00 USD</g:price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345670058</g:gtin>
+      <g:product_type>Mugs</g:product_type>
+    </item>
+    <item>
+      <g:id>merino-beanie-1</g:id>
+      <g:title>Northline merino beanie, Navy</g:title>
+      <g:description>Soft merino wool beanie with a fold-up cuff.</g:description>
+      <g:link>https://shop.example.com/products/merino-beanie</g:link>
+      <g:image_link>https://cdn.example.com/files/beanie-navy.jpg</g:image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>24.00 USD</g:price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:mpn>NL-BEANIE-NVY</g:mpn>
+      <g:item_group_id>merino-beanie</g:item_group_id>
+      <g:item_group_title>Northline merino beanie</g:item_group_title>
+      <g:product_type>Hats</g:product_type>
+      <g:color>Navy</g:color>
+      <g:gender>unisex</g:gender>
+      <g:age_group>adult</g:age_group>
+    </item>
+    <item>
+      <g:id>merino-beanie-2</g:id>
+      <g:title>Northline merino beanie, Rust</g:title>
+      <g:description>Soft merino wool beanie with a fold-up cuff.</g:description>
+      <g:link>https://shop.example.com/products/merino-beanie</g:link>
+      <g:image_link>https://cdn.example.com/files/beanie-rust.jpg</g:image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>24.00 USD</g:price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:mpn>NL-BEANIE-RST</g:mpn>
+      <g:item_group_id>merino-beanie</g:item_group_id>
+      <g:item_group_title>Northline merino beanie</g:item_group_title>
+      <g:product_type>Hats</g:product_type>
+      <g:color>Rust</g:color>
+      <g:gender>unisex</g:gender>
+      <g:age_group>adult</g:age_group>
+    </item>
+  </channel>
+</rss>

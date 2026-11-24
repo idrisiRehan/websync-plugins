@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>Northline Outdoor</title>
+    <link>https://shop.example.com/</link>
+    <description>Product feed for Google Merchant Center</description>
+    <item>
+      <g:id>HOODIE-BLU-S</g:id>
+      <g:title>Northline fleece hoodie, Blue, S</g:title>
+      <g:description>Midweight fleece hoodie with a full zip and two hand pockets.
+100% recycled polyester
+Machine washable</g:description>
+      <g:link>https://shop.example.com/?post_type=product&amp;p=101</g:link>
+      <g:image_link>https://cdn.example.com/files/hoodie-blue.jpg</g:image_link>
+      <g:additional_image_link>https://cdn.example.com/files/hoodie-back.jpg</g:additional_image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>65.00 USD</g:price>
+      <g:sale_price>55.00 USD</g:sale_price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345670065</g:gtin>
+      <g:item_group_id>HOODIE</g:item_group_id>
+      <g:item_group_title>Northline fleece hoodie</g:item_group_title>
+      <g:product_type>Clothing &gt; Hoodies</g:product_type>
+      <g:color>Blue</g:color>
+      <g:size>S</g:size>
+    </item>
+    <item>
+      <g:id>HOODIE-BLU-M</g:id>
+      <g:title>Northline fleece hoodie, Blue, M</g:title>
+      <g:description>Midweight fleece hoodie with a full zip and two hand pockets.
+100% recycled polyester
+Machine washable</g:description>
+      <g:link>https://shop.example.com/?post_type=product&amp;p=101</g:link>
+      <g:image_link>https://cdn.example.com/files/hoodie-blue.jpg</g:image_link>
+      <g:additional_image_link>https://cdn.example.com/files/hoodie-back.jpg</g:additional_image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>65.00 USD</g:price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345670072</g:gtin>
+      <g:item_group_id>HOODIE</g:item_group_id>
+      <g:item_group_title>Northline fleece hoodie</g:item_group_title>
+      <g:product_type>Clothing &gt; Hoodies</g:product_type>
+      <g:color>Blue</g:color>
+      <g:size>M</g:size>
+    </item>
+    <item>
+      <g:id>HOODIE-GRY-S</g:id>
+      <g:title>Northline fleece hoodie, Grey, S</g:title>
+      <g:description>Midweight fleece hoodie with a full zip and two hand pockets.
+100% recycled polyester
+Machine washable</g:description>
+      <g:link>https://shop.example.com/?post_type=product&amp;p=101</g:link>
+      <g:image_link>https://cdn.example.com/files/hoodie-grey.jpg</g:image_link>
+      <g:additional_image_link>https://cdn.example.com/files/hoodie-back.jpg</g:additional_image_link>
+      <g:availability>out_of_stock</g:availability>
+      <g:price>65.00 USD</g:price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345670089</g:gtin>
+      <g:item_group_id>HOODIE</g:item_group_id>
+      <g:item_group_title>Northline fleece hoodie</g:item_group_title>
+      <g:product_type>Clothing &gt; Hoodies</g:product_type>
+      <g:color>Grey</g:color>
+      <g:size>S</g:size>
+    </item>
+    <item>
+      <g:id>HOODIE-GRY-M</g:id>
+      <g:title>Northline fleece hoodie, Grey, M</g:title>
+      <g:description>Midweight fleece hoodie with a full zip and two hand pockets.
+100% recycled polyester
+Machine washable</g:description>
+      <g:link>https://shop.example.com/?post_type=product&amp;p=101</g:link>
+      <g:image_link>https://cdn.example.com/files/hoodie-grey.jpg</g:image_link>
+      <g:additional_image_link>https://cdn.example.com/files/hoodie-back.jpg</g:additional_image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>65.00 USD</g:price>
+      <g:sale_price>52.00 USD</g:sale_price>
+      <g:sale_price_effective_date>2026-12-01T00:00/2026-12-31T23:59</g:sale_price_effective_date>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345670096</g:gtin>
+      <g:item_group_id>HOODIE</g:item_group_id>
+      <g:item_group_title>Northline fleece hoodie</g:item_group_title>
+      <g:product_type>Clothing &gt; Hoodies</g:product_type>
+      <g:color>Grey</g:color>
+      <g:size>M</g:size>
+    </item>
+    <item>
+      <g:id>ENAMEL-MUG</g:id>
+      <g:title>Northline enamel camping mug</g:title>
+      <g:description>Enamel-coated steel mug, 400 ml.
+Safe on a camp stove.</g:description>
+      <g:link>https://shop.example.com/?post_type=product&amp;p=110</g:link>
+      <g:image_link>https://cdn.example.com/files/enamel-mug.jpg</g:image_link>
+      <g:additional_image_link>https://cdn.example.com/files/enamel-mug-top.jpg</g:additional_image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>14.50 USD</g:price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345670102</g:gtin>
+      <g:product_type>Camping &gt; Cookware</g:product_type>
+      <g:color>Green</g:color>
+    </item>
+  </channel>
+</rss>

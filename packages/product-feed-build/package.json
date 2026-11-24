@@ -1,0 +1,66 @@
+{
+  "name": "product-feed-build",
+  "version": "1.0.0",
+  "description": "Turn a Shopify or WooCommerce product export into a Google Merchant Center feed or an OpenAI product feed for ChatGPT shopping, checked with product-feed-lint before it is written. Plus a CLI.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "websync-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "product-feed-build": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --conditions=websync-source --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "shopify",
+    "woocommerce",
+    "product-feed",
+    "google-merchant-center",
+    "google-shopping",
+    "merchant-center",
+    "chatgpt",
+    "chatgpt-shopping",
+    "openai",
+    "agentic-commerce",
+    "csv",
+    "converter",
+    "cli"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://github.com/idrisiRehan/websync-plugins/tree/main/packages/product-feed-build#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/product-feed-build"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  },
+  "dependencies": {
+    "metacheck": "^1.0.0",
+    "product-csv-lint": "^1.0.0",
+    "product-feed-lint": "^1.0.0"
+  }
+}
