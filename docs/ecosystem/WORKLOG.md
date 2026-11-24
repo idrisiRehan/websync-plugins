@@ -2,6 +2,26 @@
 
 Newest first. Decisions, milestones, discoveries and problems.
 
+## 2026-11-24 (late night): feed-page-check, ai-crawler-log, one shared fetcher (R-25 to R-27)
+
+- **feed-page-check 1.0.0.** Compares each feed item's price, sale price, currency and
+  availability with the Product JSON-LD on its landing page; rules quote Google's mismatch
+  pages. Added `readFeedItems()` to `product-feed-lint` and `readProducts()` to `schemaview`
+  (whose @id helpers moved to `src/graph.ts`). Independent review fixed 9 defects: sale end
+  dates a day early, member prices and WooCommerce's AggregateOffer SalePrice read as the
+  active price, two quadratic cases (one a hostile-page hang in schemaview), and more. Real
+  finding on Allbirds: JSON-LD says 73 where the page says 73.50.
+- **ai-crawler-log 1.0.0.** Apache, nginx, Caddy and Cloudflare logs; 15 operators' IP lists;
+  no client IP in any output. `robots-txt-lint`'s crawler table gained `userAgent` and
+  `ipRanges`. Independent review fixed 5 defects (memory not bounded with very long lines,
+  empty IP lists counted as spoofing, and others) and re-verified every list and user agent.
+- **createFetcher() (ADR 0008).** The three networked packages shared one fetcher in
+  `redirect-inspector`; about 380 duplicated lines removed. Its review added UTF-8 and
+  multiple-`Location` handling shared with `inspectRedirects()`, and per-reader hop caches.
+- **Site:** owner reversed "leave the site as is". Growth work (R-28) runs on a `growth` branch
+  of the site repo with the packages installed from vendored tarballs.
+- `npm run check`: 1,949 tests, pass.
+
 ## 2026-11-24 (night): product-feed-build and store-check (R-23, R-24)
 
 Owner approved the two showcase ideas: a store export to feed converter and a one-command

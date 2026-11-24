@@ -17,6 +17,8 @@ developer utilities, nothing that crawls third-party sites.
 | `product-feed-lint`, Google Merchant Center and OpenAI (ChatGPT shopping) targets | Done (R-18) |
 | `product-feed-build`: Shopify or WooCommerce export to Google or ChatGPT shopping feed | Done (R-23) |
 | `store-check`: one report of what search engines and AI agents see on a store | Done (R-24) |
+| `feed-page-check`: feed price and availability against the product page | Done (R-25) |
+| `ai-crawler-log`: AI crawlers in access logs, spoofed bots flagged | Done (R-26) |
 
 ## Ranked candidates
 

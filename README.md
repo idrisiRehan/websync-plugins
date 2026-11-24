@@ -18,6 +18,8 @@ code, tests and pipelines.
 | [`product-feed-lint`](packages/product-feed-lint) | Lints product feeds before upload, for Google Merchant Center (TSV, RSS and Atom) and for OpenAI's product feed spec for ChatGPT shopping (JSONL, CSV, TSV): required attributes, prices, availability, GTIN check digits, lengths and variants. | n/a |
 | [`product-feed-build`](packages/product-feed-build) | Turns a Shopify or WooCommerce product export into a Google Merchant Center feed or an OpenAI product feed for ChatGPT shopping, checked with `product-feed-lint` before it is written. | n/a |
 | [`store-check`](packages/store-check) | One command that shows what search engines and AI agents see on a store: redirects, robots.txt and AI crawler access, sitemap, llms.txt, page metadata, Product structured data and security headers, from a small fixed set of requests. | n/a |
+| [`feed-page-check`](packages/feed-page-check) | Finds products whose feed price, sale price, currency or availability differs from the Product data on their own page, the mismatches Google Merchant Center disapproves for. | n/a |
+| [`ai-crawler-log`](packages/ai-crawler-log) | Reads your access logs (Apache, nginx, Caddy, Cloudflare; plain or gzip, any size) and shows which AI crawlers read the site, what they fetched, the errors they got, and which claimed bots are fakes, checked against the IP lists operators publish. | n/a |
 | [`websync-mcp`](packages/websync-mcp) | Local MCP server that gives AI assistants the offline packages above as nine tools. No network access. | n/a |
 
 Every package is TypeScript and ESM, and none has a third-party runtime dependency. Library

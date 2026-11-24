@@ -10,7 +10,7 @@ Scope: plugin packages in this repository only. The WebSync website is not chang
    run from `C:\Wamp\www\websync-plugins`. Then enable private vulnerability reporting.
 2. **Confirm the SECURITY.md commitment** (acknowledge reports within 5 working days, via
    contact@websync.in), or change it.
-3. **Approve publishing thirteen packages,** in this order. `product-csv-lint` needs validators
+3. **Approve publishing fifteen packages,** in this order. `product-csv-lint` needs validators
    1.1.0, `schemaview` needs `metacheck`, `product-feed-lint` needs `sitemap-lint` and
    `product-csv-lint`, `product-feed-build` and `store-check` need the packages they use, and
    `websync-mcp` needs every offline linter. First
@@ -28,14 +28,17 @@ Scope: plugin packages in this repository only. The WebSync website is not chang
    - `product-feed-lint` 1.0.0 (new, after sitemap-lint and product-csv-lint): `cd packages/product-feed-lint && npm publish --access public`
    - `product-feed-build` 1.0.0 (new, after metacheck, product-csv-lint and product-feed-lint): `cd packages/product-feed-build && npm publish --access public`
    - `store-check` 1.0.0 (new, after the seven packages it uses): `cd packages/store-check && npm publish --access public`
+   - `feed-page-check` 1.0.0 (new, after product-feed-lint, schemaview and redirect-inspector): `cd packages/feed-page-check && npm publish --access public`
+   - `ai-crawler-log` 1.0.0 (new, after robots-txt-lint and redirect-inspector): `cd packages/ai-crawler-log && npm publish --access public`
    - `websync-mcp` 1.0.0 (new, last): `cd packages/websync-mcp && npm publish --access public`
 4. **Decide R-4:** should `security-header-audit` stop penalising a `Server` header that names
    no version (for example `Server: cloudflare`)?
 
 ## Agent (no approval needed)
 
-1. **Next builds** are ranked in CANDIDATE-PIPELINE.md: the feed-versus-page check and
-   `ai-crawler-log` next, then the cookie audit and `email-auth-lint`. Use download data to decide further work on published packages.
+1. **Next builds** are ranked in CANDIDATE-PIPELINE.md: the cookie audit and `email-auth-lint`
+   next. The site growth work (R-28) runs on the `growth` branch of the site repo; after the
+   packages are published, replace the site's vendored tarballs with npm versions. Use download data to decide further work on published packages.
 2. **Every quarter, recheck the sourced tables:** `schemaview` against Google's structured data
    docs and updates log (R-16), the AI crawler table and both feed tables (R-21). Next check:
    2027-02.
@@ -46,8 +49,9 @@ Scope: plugin packages in this repository only. The WebSync website is not chang
 
 ## Stopping point (2026-11-24, end of day)
 
-The repository is committed. `npm run check` passes (1,717 tests across thirteen packages).
-Nothing has been published or pushed. Thirteen packages are ready to release:
+The repository is committed. `npm run check` passes (1,949 tests across fifteen packages).
+Nothing has been published or pushed. Fifteen packages are ready to release:
 `security-header-audit`, `sitemap-lint`, `product-csv-lint`, `metacheck`, `schemaview`,
 `llms-txt-kit`, `redirect-inspector`, `robots-txt-lint`, `product-feed-lint`,
-`product-feed-build`, `store-check` and `websync-mcp` at 1.0.0, and `websync-validators` 1.1.0.
+`product-feed-build`, `store-check`, `feed-page-check`, `ai-crawler-log` and `websync-mcp` at
+1.0.0, and `websync-validators` 1.1.0.

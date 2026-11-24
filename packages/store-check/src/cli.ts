@@ -4,8 +4,7 @@
 
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
-import { checkStore } from "./check.ts";
-import { DEFAULT_TIMEOUT_MS, MAX_REQUESTS } from "./fetch.ts";
+import { checkStore, DEFAULT_TIMEOUT_MS, MAX_REQUESTS } from "./check.ts";
 import { formatReport } from "./format.ts";
 
 const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string };

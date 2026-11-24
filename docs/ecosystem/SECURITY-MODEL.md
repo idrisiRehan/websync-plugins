@@ -12,6 +12,12 @@ package in this repository and to any site tool built on one.
 | **CLI** | The operator, on their own machine | Fetches only the URL given on the command line. `localhost` and private addresses are **allowed**, because testing a dev server is a legitimate use and the operator already has that network access. Bounded by a timeout. Doesn't read response bodies it doesn't need. Fixed `User-Agent` naming the package. |
 | **Public service** (websync.in `apis/`, any future hosted MCP) | Anyone on the internet | Every fetch of a caller-supplied URL goes through `safeFetch()` in the site's `apis/config.php`. Never call curl or `fetch` directly on caller input. Every route has a per-IP rate limit. |
 
+Two CLIs fetch more than the URL on their command line, and say so in their READMEs:
+`feed-page-check` fetches the item links inside the feed it is given (a default limit of 50 items,
+a per-run request budget, one fetch per URL), and `ai-crawler-log` fetches only the operators'
+published IP range files listed in the crawler table (none with `--ranges` or `--no-verify`).
+Both use the same timeouts and byte caps as the network libraries.
+
 A CLI must never be wrapped as a public service as it is. The README of every CLI says so.
 
 ## 2. Controls in `safeFetch()` (public tier)

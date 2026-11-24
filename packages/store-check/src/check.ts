@@ -1,17 +1,27 @@
-// checkStore(): fetches a fixed, small set of a store's files and pages (fetch.ts), runs the
+// checkStore(): fetches a fixed, small set of a store's files and pages, runs the
 // repository's linters on them and collects the results into one report. Every check is the
 // linters' own; this module only decides what to fetch and turns each result into a section.
 
 import { gunzipSync } from "node:zlib";
-import { inspectRedirects, type RedirectResult } from "redirect-inspector";
+import { createFetcher, inspectRedirects, type FetchRecord as BaseRecord, type RedirectResult } from "redirect-inspector";
 import { aiCrawlerReport, isAllowed, lintRobotsTxt, type AiCrawlerAccess, type RobotsTxtResult } from "robots-txt-lint";
 import { lintSitemap, MAX_BYTES as SITEMAP_MAX_BYTES, type SitemapResult } from "sitemap-lint";
 import { lintLlmsTxt } from "llms-txt-kit";
 import { lintMetadata } from "metacheck";
 import { validateStructuredData, type StructuredDataResult } from "schemaview";
 import { analyzeHeaders, normalizeHeaders } from "security-header-audit";
-import { createFetcher, DEFAULT_TIMEOUT_MS, DEFAULT_USER_AGENT, MAX_REDIRECTS, type FetchRecord, type Fetched } from "./fetch.ts";
 import { pickChildSitemap, pickProductUrl } from "./product.ts";
+
+// Every request of a run goes through one fetcher (redirect-inspector's createFetcher), which
+// counts it against the request budget, puts a timeout on it, follows redirects one hop at a
+// time (so each hop is counted too), reads bodies only up to a byte cap while they stream, and
+// cancels the bodies it doesn't need.
+export const DEFAULT_TIMEOUT_MS = 10_000;
+export const DEFAULT_USER_AGENT = "store-check (+https://github.com/idrisiRehan/websync-plugins)";
+/** Redirects followed per fetch. RFC 9309 s2.3.1.2 asks crawlers to follow at least five for robots.txt. */
+export const MAX_REDIRECTS = 5;
+/** HTTP requests per run, redirects included. The README's request budget explains the number. */
+export const MAX_REQUESTS = 20;
 
 // Body caps, the same as each linter's own CLI uses.
 /** robots-txt-lint: Google reads 500 KiB, and 1 MiB is enough to report a file over that. */
@@ -25,6 +35,19 @@ const ACCEPT_TEXT = "text/plain, */*;q=0.1";
 const ACCEPT_MARKDOWN = "text/markdown, text/plain;q=0.9, */*;q=0.1";
 const ACCEPT_XML = "application/xml, text/xml;q=0.9, */*;q=0.1";
 const ACCEPT_HTML = "text/html, application/xhtml+xml;q=0.9, */*;q=0.1";
+
+export interface FetchRecord extends BaseRecord {
+  /** What the fetch was for, such as "robots.txt" or "product page". */
+  purpose: string;
+}
+
+interface Fetched {
+  record: FetchRecord;
+  /** Headers of the last response, or null when none arrived. */
+  headers: Headers | null;
+  /** The whole body of a 2xx response, or null when it wasn't read or the fetch failed. */
+  body: Uint8Array | null;
+}
 
 export type Severity = "error" | "warning";
 export type SectionId = "redirects" | "robots-txt" | "crawlers" | "sitemap" | "llms-txt" | "home-page" | "product-page" | "structured-data" | "security-headers";
@@ -156,6 +179,8 @@ function httpUrl(input: string, name: string): URL {
   if (!url || (url.protocol !== "http:" && url.protocol !== "https:")) throw new TypeError(`${name} must be an absolute http or https URL, got "${input}".`);
   return url;
 }
+
+const formatBytes = (n: number) => (n >= 1024 * 1024 ? `${n / (1024 * 1024)} MiB` : `${n / 1024} KiB`);
 
 /** The fact for a fetch that failed or stopped early (record.error is set). */
 const couldntRead = (record: FetchRecord) => `Couldn't read ${record.url}: ${record.error}.`;
@@ -538,7 +563,14 @@ export async function checkStore(url: string, options: CheckOptions = {}): Promi
   }
 
   const checkedAt = new Date().toISOString();
-  const net = createFetcher(options.fetch ?? fetch, timeoutMs, userAgent);
+  const net = createFetcher({
+    fetch: options.fetch,
+    timeoutMs,
+    userAgent,
+    maxRequests: MAX_REQUESTS,
+    maxRedirects: MAX_REDIRECTS,
+    budgetError: `not requested: store-check's limit of ${MAX_REQUESTS} requests per run was reached`,
+  });
   // Two chains of at most MAX_REDIRECTS + 1 requests each fit in MAX_REQUESTS, so these
   // never run into the budget; the fetches after them stop when it runs out.
   const chainOptions = { maxHops: MAX_REDIRECTS, timeoutMs, userAgent, fetch: net.fetch };
@@ -560,7 +592,9 @@ export async function checkStore(url: string, options: CheckOptions = {}): Promi
   const site = siteUrl.origin;
   const siteHosts = [...new Set([start.host, siteUrl.host])];
   const get: Get = async (target, purpose, accept, maxBytes) => {
-    const fetched = await net.get(target, purpose, accept, maxBytes);
+    const tooLargeError = `the body is larger than ${formatBytes(maxBytes)}, so store-check stopped reading it`;
+    const { record, headers, body } = await net.get(target, { accept, maxBytes, tooLargeError });
+    const fetched = { record: { purpose, ...record }, headers, body };
     requests.push(fetched.record);
     return fetched;
   };

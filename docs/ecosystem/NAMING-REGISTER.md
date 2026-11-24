@@ -23,6 +23,8 @@ the chosen names is a known product or mark.
 | `product-feed-lint` | npm | Available (404, checked 2026-11-24) | registry | Built (1.0.0 ready). `merchant-feed-lint` and `feed-lint` are also free. |
 | `product-feed-build` | npm | Available (404, checked 2026-11-24) | registry | Built (1.0.0 ready). `csv-to-feed` and `store-feed` are also free. |
 | `store-check` | npm | Available (404, checked 2026-11-24) | registry | Built (1.0.0 ready). Descriptive rather than `websync-check` (also free), like the other packages. |
+| `feed-page-check` | npm | Available (404, checked 2026-11-24) | registry | Built (1.0.0 ready). `feed-page-diff` is also free. |
+| `ai-crawler-log` | npm | Available (404, checked 2026-11-24) | registry | Built (1.0.0 ready). `ai-bot-log` is also free. |
 | `websync-plugins` | GitHub repo | **Confirmed by owner** (2026-11-24) | not checked (no GitHub access) | Matches this folder. |
 
 ### Why descriptive names, not `websync-*`, for new packages

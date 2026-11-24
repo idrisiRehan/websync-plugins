@@ -435,7 +435,7 @@ interface FetchRecord {
   redirects: number;
   durationMs: number;
   bytes: number | null;      // body bytes read, null when the body wasn't read
-  error: string | null;      // timeout, network error, too many redirects, body over the cap, budget
+  error: string | null;      // timeout, network error, too many redirects or a loop, body over the cap, budget
 }
 ```
 

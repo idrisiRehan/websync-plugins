@@ -19,6 +19,8 @@ body:
         - product-feed-lint
         - product-feed-build
         - store-check
+        - feed-page-check
+        - ai-crawler-log
         - websync-mcp
     validations:
       required: true
