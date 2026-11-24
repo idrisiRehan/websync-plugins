@@ -171,6 +171,9 @@ interface RedirectFinding {
 }
 ```
 
+`REDIRECT_STATUSES` is also exported: the set of statuses that are followed as redirects
+(301, 302, 303, 307 and 308, the Fetch Standard's redirect statuses).
+
 `inspectRedirects()` throws only for a start URL that isn't an absolute http(s) URL, for
 invalid options, and in a runtime whose `fetch` hides redirect responses (browsers return an
 opaque response for `redirect: "manual"`, so this is for Node and similar runtimes). A request

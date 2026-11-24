@@ -1,0 +1,72 @@
+{
+  "name": "store-check",
+  "version": "1.0.0",
+  "description": "One command to check what search engines and AI agents see on your store: robots.txt and AI crawler access, sitemap, llms.txt, page metadata, Product structured data, security headers and redirects.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "websync-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "store-check": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --conditions=websync-source --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "seo",
+    "audit",
+    "ecommerce",
+    "store",
+    "shopify",
+    "woocommerce",
+    "seo-audit",
+    "product-schema",
+    "ai-crawlers",
+    "robots.txt",
+    "sitemap",
+    "structured-data",
+    "llms-txt",
+    "security-headers",
+    "cli"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://github.com/idrisiRehan/websync-plugins/tree/main/packages/store-check#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/store-check"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  },
+  "dependencies": {
+    "llms-txt-kit": "^1.0.0",
+    "metacheck": "^1.0.0",
+    "redirect-inspector": "^1.0.0",
+    "robots-txt-lint": "^1.0.0",
+    "schemaview": "^1.0.0",
+    "security-header-audit": "^1.0.0",
+    "sitemap-lint": "^1.0.0"
+  }
+}
