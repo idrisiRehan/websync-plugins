@@ -1,0 +1,4 @@
+item_id,title,description,url,image_url,brand,seller_name,availability,price,sale_price,gtin,group_id,listing_has_variations,variant_dict,target_countries,store_country
+MUG-350-BLUE,"Northline ceramic mug, 350 ml, blue",Dishwasher-safe glazed stoneware mug.,https://www.example.com/products/mug-blue,https://www.example.com/images/mug-blue.jpg,Northline,Northline Home,In Stock,18.00,,4006 3813 3393 1,,,,US,US
+TRAIL-BLK-10,"Northline trail running shoes, black, size 10",Waterproof trail shoes.,https://www.example.com/products/trail?size=10,https://www.example.com/images/trail-black.jpg,Northline,,in_stock,79.99 USD,89.99 USD,,TRAIL,true,"{""color"":""Black"",""size"":""10""}",us,US
+TRAIL-BLK-10B,"Northline trail running shoes, black, size 10",Waterproof trail shoes.,https://www.example.com/products/trail?size=10,https://www.example.com/images/trail-black.jpg,n/a,Northline Outdoor,pre_order,79.99 USD,,,TRAIL,true,"{""color"":""Black"",""size"":""10""}",US,US

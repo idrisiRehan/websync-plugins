@@ -1,0 +1,68 @@
+{
+  "name": "product-feed-lint",
+  "version": "1.0.0",
+  "description": "Lint product feeds before you upload them: Google Merchant Center (TSV, RSS and Atom XML) and OpenAI product feeds for ChatGPT shopping (JSONL, CSV, TSV). Required attributes, prices, availability, GTIN check digits and variants, with row and line numbers. Plus a CLI.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "websync-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "product-feed-lint": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --conditions=websync-source --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "google-merchant-center",
+    "merchant-center",
+    "google-shopping",
+    "openai",
+    "chatgpt",
+    "chatgpt-shopping",
+    "agentic-commerce",
+    "product-feed",
+    "feed",
+    "ecommerce",
+    "gtin",
+    "validator",
+    "lint",
+    "linter",
+    "cli"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://github.com/idrisiRehan/websync-plugins/tree/main/packages/product-feed-lint#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/product-feed-lint"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  },
+  "dependencies": {
+    "product-csv-lint": "^1.0.0",
+    "sitemap-lint": "^1.0.0",
+    "websync-validators": "^1.1.0"
+  }
+}

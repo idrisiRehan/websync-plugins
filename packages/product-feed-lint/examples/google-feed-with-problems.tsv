@@ -1,0 +1,5 @@
+id	title	description	link	image_link	availability	price	sale_price	brand	gtin	identifier_exists	colour
+MUG-350-BLUE	Northline ceramic mug, 350 ml, blue	Dishwasher-safe glazed stoneware mug.	https://www.example.com/products/mug-blue	https://www.example.com/images/mug-blue.jpg	in_stock	$18.00		Northline	4006381333930		Blue
+TEE-ORG-M	Northline organic cotton t-shirt, green, M	Crew-neck t-shirt in organic cotton.	www.example.com/products/tee	https://www.example.com/images/tee-green.jpg	in stock	25.00 USD	29.00 USD	Northline	5012345678900	no	Green
+LAMP-2027	Northline desk lamp with dimmer	Aluminium desk lamp with a stepless dimmer.	https://www.example.com/products/desk-lamp	https://www.example.com/images/desk-lamp.jpg	preorder	89.00 USD		Northline	5012345678924		Black
+MUG-350-BLUE	Northline ceramic mug, 350 ml, red	Dishwasher-safe glazed stoneware mug.	https://www.example.com/products/mug-red		in_stock	18.00 USD		N/A			Red

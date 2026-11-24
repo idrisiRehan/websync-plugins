@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>Northline store</title>
+    <link>https://www.example.com</link>
+    <description>Northline product feed for Google Merchant Center</description>
+    <item>
+      <g:id>MUG-350-BLUE</g:id>
+      <g:title>Northline ceramic mug, 350 ml, blue</g:title>
+      <g:description>Dishwasher-safe glazed stoneware mug with a wide handle. Holds 350 ml.</g:description>
+      <g:link>https://www.example.com/products/mug-blue</g:link>
+      <g:image_link>https://www.example.com/images/mug-blue.jpg</g:image_link>
+      <g:additional_image_link>https://www.example.com/images/mug-blue-side.jpg</g:additional_image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>18.00 USD</g:price>
+      <g:condition>new</g:condition>
+      <g:brand>Northline</g:brand>
+      <g:gtin>4006381333931</g:gtin>
+      <g:shipping>
+        <g:country>US</g:country>
+        <g:service>Standard</g:service>
+        <g:price>4.95 USD</g:price>
+      </g:shipping>
+    </item>
+    <item>
+      <g:id>TEE-ORG-M</g:id>
+      <g:title>Northline organic cotton t-shirt, green, M</g:title>
+      <g:description><![CDATA[Crew-neck t-shirt in heavyweight organic cotton. Fits true to size & keeps its shape.]]></g:description>
+      <g:link>https://www.example.com/products/tee?size=m&amp;color=green</g:link>
+      <g:image_link>https://www.example.com/images/tee-green.jpg</g:image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>25.00 USD</g:price>
+      <g:sale_price>19.00 USD</g:sale_price>
+      <g:sale_price_effective_date>2026-12-01T00:00-0800/2026-12-31T23:59-0800</g:sale_price_effective_date>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345678900</g:gtin>
+      <g:mpn>NL-TEE-M</g:mpn>
+      <g:item_group_id>TEE-ORG</g:item_group_id>
+      <g:color>Green</g:color>
+      <g:size>M</g:size>
+      <g:gender>unisex</g:gender>
+      <g:age_group>adult</g:age_group>
+    </item>
+    <item>
+      <g:id>LAMP-2027</g:id>
+      <g:title>Northline desk lamp with dimmer</g:title>
+      <g:description>Aluminium desk lamp with a stepless dimmer and a 1.8 m cable. Ships in February.</g:description>
+      <g:link>https://www.example.com/products/desk-lamp</g:link>
+      <g:image_link>https://www.example.com/images/desk-lamp.jpg</g:image_link>
+      <g:availability>preorder</g:availability>
+      <g:availability_date>2027-02-15T09:00-0800</g:availability_date>
+      <g:price>89.00 USD</g:price>
+      <g:brand>Northline</g:brand>
+      <g:gtin>5012345678924</g:gtin>
+    </item>
+  </channel>
+</rss>
