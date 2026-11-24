@@ -137,6 +137,8 @@ function allowsAllInline(sources: string[], isScript: boolean): boolean {
 // and a host-source whose host-part is "*" matches any host (s6.7.2.10), whatever its port or path.
 const ANY_HOST = /^(?:https?:|(?:https?:\/\/)?\*(?:[:/].*)?)$/;
 const anyHostSources = (sources: string[]) => sources.filter((s) => ANY_HOST.test(s));
+// A product version in a Server value: "nginx/1.18.0", "Apache/2.4.41 (Ubuntu)", "Microsoft-IIS/10.0".
+const SERVER_VERSION = /\/\s*v?\d+(?:\.\d+)*\b|\b\d+\.\d+/;
 
 const SCRIPT_ELEM_FALLBACK = ["script-src-elem", "script-src", "default-src"];
 
@@ -497,8 +499,12 @@ export function analyzeHeaders(input: HeaderInput): HeaderAuditResult {
     });
   }
 
-  // 7. Server / X-Powered-By - information disclosure
-  const server = get(headers, "server");
+  // 7. Server / X-Powered-By - information disclosure. OWASP's HTTP Headers Cheat Sheet asks
+  // for "non-informative values" in Server and for X-Powered-By to be removed. A Server value
+  // without a version ("cloudflare", "nginx") names a product but not which known
+  // vulnerabilities apply, so only a versioned Server value counts as disclosure.
+  const rawServer = get(headers, "server");
+  const server = rawServer && SERVER_VERSION.test(rawServer) ? rawServer : undefined;
   const poweredBy = get(headers, "x-powered-by");
   if (server || poweredBy) {
     const parts = [server && `Server: ${server}`, poweredBy && `X-Powered-By: ${poweredBy}`].filter(Boolean);

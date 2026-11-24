@@ -7,7 +7,7 @@ repository (Security tab, "Report a vulnerability"), or email contact@websync.in
 subject "Security: <package name>".
 
 Include the package and version, the input that triggers the problem, and what you expected.
-You'll get an acknowledgement within 5 working days. Fixes are released as patch versions and
+You'll get an acknowledgement within 7 days. Fixes are released as patch versions and
 credited in the changelog unless you prefer otherwise.
 
 ## Supported versions

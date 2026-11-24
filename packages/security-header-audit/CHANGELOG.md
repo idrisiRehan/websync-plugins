@@ -22,6 +22,9 @@ All notable changes to `security-header-audit` are recorded here. The format fol
   origin (`*`, `https:`, `http:` or a `*` host): only `'none'`, `'self'` or specific origins
   restrict framing, and browsers ignore X-Frame-Options whenever `frame-ancestors` is present
   (CSP Level 3 s6.4.2, s6.4.2.2).
+- Server disclosure counts only a `Server` value that names a version (`nginx/1.18.0`,
+  `Apache/2.4.41`); a product name alone (`Server: cloudflare`) passes. `X-Powered-By` is still
+  flagged whenever it's sent (OWASP HTTP Headers Cheat Sheet).
 - Accepts a fetch `Headers` object, Node-style header objects (array values included), plain
   objects in any letter case, or `[name, value]` pairs.
 - `rating` on the result: `strong`, `needs-work` or `weak`.

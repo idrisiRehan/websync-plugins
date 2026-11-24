@@ -35,7 +35,7 @@ the matching site tools, but the site keeps its own code.
 | R-1 | Monorepo foundation: workspaces, shared tsconfig, text check, CI, release workflow, templates | Done | agent |
 | R-2 | Site consumes `websync-validators` | Dropped (site out of scope) | n/a |
 | R-3 | `websync-validators` 1.1: GTIN and ISBN | Done, awaiting publish | agent |
-| R-4 | `security-header-audit` 1.1: stop penalising a `Server` value with no version number | DISCOVERY, owner decision (package only) | owner |
+| R-4 | `security-header-audit`: stop penalising a `Server` value with no version number | Done in 1.0.0 (owner decided 2026-11-25) | agent |
 | R-5 | Site consumes `security-header-audit` | Dropped (site out of scope) | n/a |
 | R-6 | websync.in HSTS max-age | Dropped (site out of scope; left as a finding in AUDIT.md) | n/a |
 | R-7 | `sitemap-lint` 1.0 | Done, awaiting publish | agent |

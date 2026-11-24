@@ -146,7 +146,7 @@ without reading it. The `User-Agent` names this package.
 | Clickjacking protection | 10 | CSP `frame-ancestors` is `'none'`, `'self'` or specific origins (not `*`, `https:` or `http:`, which allow any site), or, with no `frame-ancestors`, X-Frame-Options is a value browsers honour |
 | Referrer-Policy | 2 (browsers already default to `strict-origin-when-cross-origin`) | present |
 | Permissions-Policy | 5 | present |
-| Server / X-Powered-By | 5 | neither header is sent |
+| Server / X-Powered-By | 5 | no `Server` value with a version and no `X-Powered-By` |
 
 The score is 100 minus the deductions. The lowest possible score is 43.
 
@@ -162,7 +162,9 @@ The score is 100 minus the deductions. The lowest possible score is 43.
   [CSP Evaluator](https://csp-evaluator.withgoogle.com/).
 - **Values for Referrer-Policy and Permissions-Policy aren't graded.** Only whether they're
   present.
-- **`Server` is flagged even without a version number** (for example `Server: cloudflare`).
+- **`Server` is flagged only when it names a version** (`nginx/1.18.0`, `Apache/2.4.41`). A
+  product name alone (`Server: cloudflare`) passes; `X-Powered-By` is flagged whenever it's sent,
+  as OWASP recommends removing it.
 - **One response only.** The CLI grades the final page of a redirect chain. Headers on the
   redirects themselves, for example HSTS on the `http://` hop, aren't graded.
 - **`Content-Security-Policy-Report-Only` doesn't count**, because browsers don't enforce it.

@@ -8,8 +8,8 @@ Scope: plugin packages in this repository only. The WebSync website is not chang
 1. **Create the GitHub repository `idrisiRehan/websync-plugins`** (name confirmed) and push:
    `git remote add origin https://github.com/idrisiRehan/websync-plugins.git && git push -u origin main`,
    run from `C:\Wamp\www\websync-plugins`. Then enable private vulnerability reporting.
-2. **Confirm the SECURITY.md commitment** (acknowledge reports within 5 working days, via
-   contact@websync.in), or change it.
+2. **SECURITY.md:** decided 2026-11-25: acknowledge reports within 7 days, via
+   contact@websync.in or GitHub private vulnerability reporting.
 3. **Approve publishing fifteen packages,** in this order. `product-csv-lint` needs validators
    1.1.0, `schemaview` needs `metacheck`, `product-feed-lint` needs `sitemap-lint` and
    `product-csv-lint`, `product-feed-build` and `store-check` need the packages they use, and
@@ -31,8 +31,9 @@ Scope: plugin packages in this repository only. The WebSync website is not chang
    - `feed-page-check` 1.0.0 (new, after product-feed-lint, schemaview and redirect-inspector): `cd packages/feed-page-check && npm publish --access public`
    - `ai-crawler-log` 1.0.0 (new, after robots-txt-lint and redirect-inspector): `cd packages/ai-crawler-log && npm publish --access public`
    - `websync-mcp` 1.0.0 (new, last): `cd packages/websync-mcp && npm publish --access public`
-4. **Decide R-4:** should `security-header-audit` stop penalising a `Server` header that names
-   no version (for example `Server: cloudflare`)?
+4. **R-4 decided 2026-11-25:** a `Server` value without a version no longer counts as
+   disclosure (done in `security-header-audit` 1.0.0). Commits are authored as
+   `WebSync <contact@websync.in>`.
 
 ## Agent (no approval needed)
 

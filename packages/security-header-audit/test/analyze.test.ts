@@ -741,14 +741,25 @@ describe("Server info disclosure", () => {
   });
 
   test("both present -> one warning, one -5 deduction, both quoted", () => {
-    const { score, rules } = analyzeHeaders(withHeaders({ server: "Apache", "x-powered-by": "PHP/8.2.1" }));
+    const { score, rules } = analyzeHeaders(withHeaders({ server: "Apache/2.4.41 (Ubuntu)", "x-powered-by": "PHP/8.2.1" }));
     const r = rule(rules, "Server info disclosure");
-    assert.match(r.message, /^Server: Apache, X-Powered-By: PHP\/8\.2\.1 - /);
+    assert.match(r.message, /^Server: Apache\/2\.4\.41 \(Ubuntu\), X-Powered-By: PHP\/8\.2\.1 - /);
     assert.equal(score, 95);
   });
 
-  test("a version-less Server value is still flagged", () => {
-    const r = rule(analyzeHeaders(withHeaders({ server: "cloudflare" })).rules, "Server info disclosure");
-    assert.equal(r.status, "warning");
+  test("a Server value without a version passes; only a version counts as disclosure", () => {
+    for (const server of ["cloudflare", "nginx", "Apache", "AmazonS3", "ECS (nyb/1D2E)"]) {
+      const r = rule(analyzeHeaders(withHeaders({ server })).rules, "Server info disclosure");
+      assert.equal(r.status, "passed", server);
+    }
+    for (const server of ["nginx/1.18.0", "Microsoft-IIS/10.0", "Apache/2.4.41 (Ubuntu)", "openresty 1.21.4"]) {
+      const r = rule(analyzeHeaders(withHeaders({ server })).rules, "Server info disclosure");
+      assert.equal(r.status, "warning", server);
+    }
+  });
+
+  test("a version-less Server is left out of the message when X-Powered-By is flagged", () => {
+    const r = rule(analyzeHeaders(withHeaders({ server: "cloudflare", "x-powered-by": "Express" })).rules, "Server info disclosure");
+    assert.match(r.message, /^X-Powered-By: Express - reveals/);
   });
 });
