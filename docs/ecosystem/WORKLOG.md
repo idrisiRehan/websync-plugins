@@ -2,6 +2,30 @@
 
 Newest first. Decisions, milestones, discoveries and problems.
 
+## 2026-11-24 (evening): robots-txt-lint and product-feed-lint (R-17, R-18, R-20)
+
+Owner direction: in the age of AI, build exact checks for files machines read, and something
+in the AI niche that stands out. Evidence and rejected ideas: TOOL-OPPORTUNITY-MATRIX.md
+rounds 2 and 2b, and CANDIDATE-PIPELINE.md.
+
+- **robots-txt-lint 1.0.0.** 15 rules from RFC 9309, Google's documentation and Google's
+  open-source parser; an RFC 9309 matcher (`isAllowed`); an AI crawler report over 21 tokens,
+  each verified on its operator's page. Independent review fixed 7 defects (a quadratic case,
+  false duplicate groups on amazon.com, path and URL encoded differently, misleading 404
+  handling, and others) after checking about 130 matching cases and 26 real sites.
+- **product-feed-lint 1.0.0.** One engine, two sourced requirement tables: Google Merchant
+  Center (TSV, RSS, Atom, plus the UCP `native_commerce` attribute) and OpenAI's product feed
+  spec for ChatGPT shopping (JSONL, CSV, TSV). No other npm package lints feeds for AI
+  shopping. Reuses `parseCsv`, `parseXml` and the GTIN checks (ADR 0006). Independent review
+  re-read every Google page as plain text and fixed 11 defects (alias precedence, GTIN rule
+  applied to the wrong target, structured_title ignored, commas splitting XML URLs, false
+  quote warnings, and others).
+- **product-csv-lint:** `parseCsv` deduplicated issues with a scan over all earlier issues,
+  which was quadratic on files with many stray quotes (80,000 rows: 69 s). Now a set; tested.
+- **websync-mcp:** `lint_robots_txt` and `lint_product_feed`; nine tools.
+- `npm run check`: 1,479 tests, pass. All eleven packages packed and installed together in a
+  clean project offline: CLIs, library imports and a raw MCP session pass.
+
 ## 2026-11-24 (pre-release fixes): the known gaps left by the reviews
 
 Owner asked for the open issues to be fixed before publishing. Each fix has regression tests.

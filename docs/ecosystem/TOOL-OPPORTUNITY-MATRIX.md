@@ -76,6 +76,49 @@ above are unchanged and still describe the evidence at the time. Download number
 publication decide which of them get further work. `redirect-inspector` shipped as a CLI and
 library for operators, not as a public web tool, so it needs no site endpoint.
 
+### Round 2, 2026-11-24: checks for files machines read
+
+Owner direction: in the age of AI, invest in exact checks that agents and CI can call, and in
+files that crawlers and shopping agents read, not in general developer utilities.
+
+Evidence (npm registry and download API, week of 2026-11-17 to 11-23):
+
+- **robots.txt.** Parsing and "can this URL be fetched" are saturated: `robots-parser`
+  8.8 million downloads a week, `robots-txt-guard` 30,673. AI crawler access checkers are new
+  and small, and fetch live sites: `crawlerpeek` (about 1,900 a month), `crawl-readiness-mcp`
+  (1,474), `@queryrev/ai-readiness` (702), `@cernitur/aeo-lint` (53). No offline linter that
+  reports RFC 9309 and Google parsing problems was found. Differentiation is the lint rules,
+  not the matcher, which is included because the CLI needs to explain decisions.
+- **Merchant Center feeds.** One small, new validator: `@aihellolabs/google-shopping-feed-validator`
+  0.1.1 (511 a month, October 2026). `google-merchant-feed` (67 a week) generates feeds. The
+  gap is a tested linter with a sourced rules table, row and line numbers, and GTIN check
+  digits, for TSV and XML.
+- Names `robots-txt-lint` and `product-feed-lint` returned 404 on the registry.
+
+Decision: build `robots-txt-lint` and `product-feed-lint` (ROADMAP R-17, R-18). A GitHub Action
+that runs the CLIs in CI follows publication (R-19).
+
+### Round 2b, 2026-11-24: the AI niche
+
+Owner asked for AI-niche packages that stand out. npm search, same week:
+
+| Idea | Incumbents found | Verdict |
+|---|---|---|
+| Agent context file linter (AGENTS.md, CLAUDE.md, Cursor rules, skills) | `@yawlabs/ctxlint` (177,036 a month), `@vibe-agent-toolkit/agent-skills` (99,973), `agents-md-lint` (196) | Rejected: well served |
+| MCP server or tool schema linter | `@modelcontextprotocol/conformance` (900,276 a month), `@mcpjam/cli` (79,622), `mcp-lint` (3,834), `@vantageos/mcp-doctor` (4,941) | Rejected: official and community tools exist |
+| Site "agent readiness" score | `ax` (57,601 a month), `aigentify` (14,569), `is-agentic` (7,682), `@forkpoint/agent-lighthouse-core` (3,534), `@agentic-readiness/cli` (3,168), `@canonry/agent-readiness` (1,846) | Rejected: crowded, and scores are opinion rather than spec |
+| Product feed linter for AI shopping agents (OpenAI's published product feed spec for ChatGPT shopping) | None found | **Build**, as a second target in `product-feed-lint` |
+
+OpenAI publishes a product feed spec for its Agentic Commerce Protocol
+(https://developers.openai.com/commerce/product-feeds/spec). Google's agentic checkout (UCP)
+builds on Merchant Center feeds and a `native_commerce` attribute
+(https://support.google.com/merchants/answer/16837055). One linter covering both makes
+`product-feed-lint` the feed check for AI shopping, which fits the ecommerce-first strategy.
+Next candidate after it: a feed-versus-page check (price and availability in the feed against
+the page's Product JSON-LD, via `schemaview`), since mismatches cause disapprovals.
+
+The full ranked list of next candidates is in [CANDIDATE-PIPELINE.md](CANDIDATE-PIPELINE.md).
+
 ### Watchlist
 
 - **product-csv-lint.** Strongest ecommerce fit and no npm competitor found. But Shopify and

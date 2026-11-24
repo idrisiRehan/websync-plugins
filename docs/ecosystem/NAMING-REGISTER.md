@@ -19,6 +19,8 @@ the chosen names is a known product or mark.
 | `schemaview` | npm | Available (404, rechecked 2026-11-24) | `npm view` | Built (1.0.0 ready). |
 | `llms-txt-kit` | npm | Available (404, rechecked 2026-11-24) | `npm view` | Built (1.0.0 ready). `llmstxt-kit` (8 downloads a week) exists; the names are easy to confuse, but npm's similarity check may still accept ours. Confirmed only at first publish. |
 | `redirect-inspector` | npm | Available (404, rechecked 2026-11-24) | `npm view` | Built (1.0.0 ready). |
+| `robots-txt-lint` | npm | Available (404, checked 2026-11-24) | registry | Built (1.0.0 ready). `robotstxt-lint`, `robots-lint` and `robots-txt-linter` are also free. |
+| `product-feed-lint` | npm | Available (404, checked 2026-11-24) | registry | Built (1.0.0 ready). `merchant-feed-lint` and `feed-lint` are also free. |
 | `websync-plugins` | GitHub repo | **Confirmed by owner** (2026-11-24) | not checked (no GitHub access) | Matches this folder. |
 
 ### Why descriptive names, not `websync-*`, for new packages

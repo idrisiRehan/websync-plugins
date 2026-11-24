@@ -14,13 +14,16 @@ code, tests and pipelines.
 | [`schemaview`](packages/schemaview) | Validates JSON-LD structured data against the properties Google documents for rich results, with line numbers and JSON paths. Flags deprecated types. | n/a |
 | [`llms-txt-kit`](packages/llms-txt-kit) | Lints and builds `llms.txt` files per the llmstxt.org proposal. | n/a |
 | [`redirect-inspector`](packages/redirect-inspector) | Follows redirect chains hop by hop and reports loops, downgrades, long chains and bad final statuses. Verifies a whole redirect map after a site migration. | n/a |
-| [`websync-mcp`](packages/websync-mcp) | Local MCP server that gives AI assistants the offline packages above as seven tools. No network access. | n/a |
+| [`robots-txt-lint`](packages/robots-txt-lint) | Lints robots.txt against RFC 9309 and how Google reads it, tests URLs against the rules, and shows which AI crawlers (GPTBot, ClaudeBot, Google-Extended and more) are allowed. | n/a |
+| [`product-feed-lint`](packages/product-feed-lint) | Lints product feeds before upload, for Google Merchant Center (TSV, RSS and Atom) and for OpenAI's product feed spec for ChatGPT shopping (JSONL, CSV, TSV): required attributes, prices, availability, GTIN check digits, lengths and variants. | n/a |
+| [`websync-mcp`](packages/websync-mcp) | Local MCP server that gives AI assistants the offline packages above as nine tools. No network access. | n/a |
 
 Every package is TypeScript and ESM, and none has a third-party runtime dependency. Library
 code makes no network calls, except `redirect-inspector`, whose job is fetching
 ([security model](docs/ecosystem/SECURITY-MODEL.md)). Some packages use others from this
 repository: `product-csv-lint` uses `websync-validators`, `schemaview` uses the HTML tokenizer
-in `metacheck`, and `websync-mcp` uses all the offline packages (ADR 0003, 0004, 0005).
+in `metacheck`, `product-feed-lint` uses the CSV and XML readers of `product-csv-lint` and
+`sitemap-lint`, and `websync-mcp` uses all the offline packages (ADR 0003 to 0006).
 
 ## Working on this repository
 
