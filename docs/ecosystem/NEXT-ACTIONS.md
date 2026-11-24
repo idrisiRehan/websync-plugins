@@ -10,27 +10,36 @@ Scope: plugin packages in this repository only. The WebSync website is not chang
    run from `C:\Wamp\www\websync-plugins`. Then enable private vulnerability reporting.
 2. **Confirm the SECURITY.md commitment** (acknowledge reports within 5 working days, via
    contact@websync.in), or change it.
-3. **Approve publishing five packages,** in this order (product-csv-lint needs validators 1.1.0; websync-mcp needs all four). First publish of a new name is manual (RELEASING.md
-   step 5); after that, link the trusted publisher on npmjs.com and release by tag.
+3. **Approve publishing nine packages,** in this order. `product-csv-lint` needs validators
+   1.1.0, `schemaview` needs `metacheck`, and `websync-mcp` needs every offline package. First
+   publish of a new name is manual (RELEASING.md step 5); after that, link the trusted
+   publisher on npmjs.com and release by tag.
    - `security-header-audit` 1.0.0 (new): `cd packages/security-header-audit && npm publish --access public`
    - `sitemap-lint` 1.0.0 (new): `cd packages/sitemap-lint && npm publish --access public`
    - `websync-validators` 1.1.0 (existing name): `cd packages/validators && npm publish`
    - `product-csv-lint` 1.0.0 (new, after validators 1.1.0): `cd packages/product-csv-lint && npm publish --access public`
+   - `metacheck` 1.0.0 (new): `cd packages/metacheck && npm publish --access public`
+   - `schemaview` 1.0.0 (new, after metacheck): `cd packages/schemaview && npm publish --access public`
+   - `llms-txt-kit` 1.0.0 (new): `cd packages/llms-txt-kit && npm publish --access public`
+   - `redirect-inspector` 1.0.0 (new): `cd packages/redirect-inspector && npm publish --access public`
    - `websync-mcp` 1.0.0 (new, last): `cd packages/websync-mcp && npm publish --access public`
 4. **Decide R-4:** should `security-header-audit` stop penalising a `Server` header that names
    no version (for example `Server: cloudflare`)?
 
 ## Agent (no approval needed)
 
-1. **Re-score the watchlist** (metacheck, schemaview, llms-txt-kit) once there is npm download
-   data for the published packages. Pick the next package only from evidence.
-2. **After publishing:** submit `websync-mcp` to the MCP server registry
+1. **Use download data to decide further work** on each package once published. Nothing new
+   is queued: every remaining candidate was rejected (TOOL-OPPORTUNITY-MATRIX.md).
+2. **Every quarter, recheck `schemaview`'s rule table** against Google's structured data docs
+   and the Search Central updates log (R-16). Next check: 2027-02.
+3. **After publishing:** submit `websync-mcp` to the MCP server registry
    (registry.modelcontextprotocol.io) and work through the distribution checklist in
    CONTENT-STRATEGY.md. Both are external actions that need owner approval.
-3. **Monthly:** record npm weekly downloads for each package in WORKLOG.md.
+4. **Monthly:** record npm weekly downloads for each package in WORKLOG.md.
 
-## Stopping point (2026-11-24)
+## Stopping point (2026-11-24, end of day)
 
-The repository is clean and committed. `npm run check` passes (595 tests). Nothing has been
-published or pushed. Five packages are ready to release: `security-header-audit` 1.0.0,
-`websync-validators` 1.1.0, `sitemap-lint` 1.0.0, `product-csv-lint` 1.0.0 and `websync-mcp` 1.0.0.
+The repository is committed. `npm run check` passes (1,067 tests across nine packages).
+Nothing has been published or pushed. Nine packages are ready to release:
+`security-header-audit`, `sitemap-lint`, `product-csv-lint`, `metacheck`, `schemaview`,
+`llms-txt-kit`, `redirect-inspector` and `websync-mcp` at 1.0.0, and `websync-validators` 1.1.0.

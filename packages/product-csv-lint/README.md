@@ -37,7 +37,7 @@ ERROR  sku-duplicate (row 5, SKU)
   quotes, semicolon-separated files saved by Excel, files that aren't UTF-8, ragged rows,
   currency symbols in prices, invalid barcodes, duplicate SKUs and variants.
 - **Offline.** Nothing is uploaded and nothing is fetched. The only dependency is
-  [`websync-validators`](../validators) (same maintainer, no dependencies of its own) for
+  [`websync-validators`](https://www.npmjs.com/package/websync-validators) (same maintainer, no dependencies of its own) for
   barcode check digits.
 
 The browser versions are the free

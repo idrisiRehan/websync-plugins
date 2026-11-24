@@ -15,6 +15,10 @@ the chosen names is a known product or mark.
 | `sitemap-lint` | npm | Available (404) | `npm view` | Built (1.0.0 ready). Owner confirmed the name 2026-11-24. |
 | `product-csv-lint` | npm | Available (404) | `npm view` | Built (1.0.0 ready). Nearby names `shopify-csv-validator`, `woocommerce-csv-validator`, `product-csv-validator` are also free; none exists. |
 | `websync-mcp` | npm | Available (404) | `npm view` | Built (1.0.0 ready). Brand-prefixed on purpose: it bundles several WebSync packages, so no single descriptive name fits. |
+| `metacheck` | npm | Available (404, rechecked 2026-11-24) | `npm view` | Built (1.0.0 ready). |
+| `schemaview` | npm | Available (404, rechecked 2026-11-24) | `npm view` | Built (1.0.0 ready). |
+| `llms-txt-kit` | npm | Available (404, rechecked 2026-11-24) | `npm view` | Built (1.0.0 ready). `llmstxt-kit` (8 downloads a week) exists; the names are easy to confuse, but npm's similarity check may still accept ours. Confirmed only at first publish. |
+| `redirect-inspector` | npm | Available (404, rechecked 2026-11-24) | `npm view` | Built (1.0.0 ready). |
 | `websync-plugins` | GitHub repo | **Confirmed by owner** (2026-11-24) | not checked (no GitHub access) | Matches this folder. |
 
 ### Why descriptive names, not `websync-*`, for new packages
@@ -29,9 +33,9 @@ repository. `websync-validators` stays as it is because it's already published.
 |---|---|---|
 | urlsmith | available | rejected (saturated space) |
 | jsonlens | available | rejected |
-| redirect-inspector | available | watchlist |
+| redirect-inspector | available | **chosen** (built) |
 | headerpeek | available | merged into security-header-audit |
-| metacheck | available | watchlist |
+| metacheck | available | **chosen** (built) |
 | sitemap-surgeon | available | renamed `sitemap-lint`: says what it does |
 | linkhound | available | rejected |
 | crawlguard | **taken** (1.0.0, Feb 2026) | rejected |
@@ -44,9 +48,9 @@ repository. `websync-validators` stays as it is because it's already published.
 | webtiming | available | rejected |
 | webclean | available | rejected |
 | agent-access-check | available | rejected |
-| llms-txt-kit | available | watchlist |
-| schemaview | available | watchlist |
-| websync-mcp | available | watchlist (Stage 4) |
+| llms-txt-kit | available | **chosen** (built) |
+| schemaview | available | **chosen** (built) |
+| websync-mcp | available | **chosen** (built) |
 
 ## Rules
 

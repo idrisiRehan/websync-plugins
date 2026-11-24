@@ -11,6 +11,10 @@ body:
         - security-header-audit
         - sitemap-lint
         - product-csv-lint
+        - metacheck
+        - schemaview
+        - llms-txt-kit
+        - redirect-inspector
         - websync-mcp
     validations:
       required: true

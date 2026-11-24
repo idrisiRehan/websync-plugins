@@ -2,6 +2,53 @@
 
 Newest first. Decisions, milestones, discoveries and problems.
 
+## 2026-11-24 (late night): metacheck, schemaview, llms-txt-kit, redirect-inspector (R-11 to R-15)
+
+Owner asked for the remaining queue to be built autonomously, with tests and docs for GitHub
+and npm, using multiple agents.
+
+### How it was built
+
+- The shared HTML tokenizer (`metacheck/src/html.ts`, ADR 0005) was written first, so that
+  `metacheck` and `schemaview` would not each grow a parser.
+- One agent per package built in parallel, each confined to its own package directory. A
+  second agent per package, given the code but not the builder's conclusions, then reviewed it
+  for defects and fixed what it could reproduce. The reviews found 19 real defects, each now
+  covered by a regression test. Examples: `--expect` reported a match for a redirect loop, a
+  quadratic regex in llms.txt heading parsing, hreflang codes Google rejects, `@id` nodes not
+  merged before required-property checks.
+- Integration: three new `websync-mcp` tools, lockfile, docs, CI text check.
+
+### Decisions
+
+- `redirect-inspector` is the only library that fetches (new "network library" tier in
+  SECURITY-MODEL.md). It is not exposed through `websync-mcp`.
+- `schemaview` keeps Google's requirements in one table with a source and check date per type.
+  FAQ, HowTo, ClaimReview, SpecialAnnouncement and Dataset are reported as deprecated, per
+  Google's updates log.
+- `llms-txt-kit` follows llmstxt.org v2 (August 2026).
+- Package READMEs use absolute links only; `scripts/check-text.mjs` now fails on relative
+  links in package READMEs, because npmjs.com can't resolve them. Fixed in the four existing
+  READMEs.
+- All CLIs with a size cap now enforce it while streaming stdin and files, not after reading.
+  Empty numeric options (`--timeout ""`) are now usage errors in every CLI.
+
+### Evidence (npm, week of 2026-11-16 to 11-22)
+
+- redirect checkers: redirect-chain 167, redirect-chain-checker 7, follow-url 9 a week. None
+  verifies a redirect map.
+- llms.txt validators: turva-llms-txt-validator 665, llmstxt 131, llms-txt-lint 24 a week.
+  Generators are far larger (starlight-llms-txt 314,369), which `llms-txt-kit` doesn't target.
+
+### Tests run
+
+- `npm run check` (text, typecheck, 1,067 tests, builds): pass.
+- `npm pack` of all nine packages, installed together in a clean project with no registry
+  fetches: every CLI, the library imports and a raw MCP session listing seven tools: pass.
+- Live runs: metacheck on MDN, BBC, Guardian, IKEA, GitHub, Wikipedia; schemaview on Apple,
+  BBC, Guardian, Zappos; llms-txt-kit on websync.in, llmstxt.org, Svelte, Gemini, Anthropic;
+  redirect-inspector on websync.in, github.com, google.com, example.com.
+
 ## 2026-11-24 (night): websync-mcp 1.0.0 (R-9)
 
 - Local stdio MCP server with four tools over the four packages: `validate_identifier`,

@@ -15,9 +15,11 @@ the matching site tools, but the site keeps its own code.
 | websync-validators | 2 | 1.0.0 RELEASED; 1.1.0 READY_TO_RELEASE | `packages/validators` | `websync-validators` 1.0.0 live, 1.1.0 ready | Stage 3 done | 295 passing; GTIN/ISBN differential test vs the site's code: 200,000 inputs, 0 mismatches | README, CHANGELOG | Offline library | Pending owner approval | Publish approval | Owner: publish 1.1.0 |
 | sitemap-lint | 3 | READY_TO_RELEASE | `packages/sitemap-lint` | `sitemap-lint` 1.0.0 (name free) | Stage 3 done | 83 passing (reader, 23 rules, 50k-entry run, CLI end-to-end); fuzzed against fast-xml-parser | README, CHANGELOG, examples, ADR 0002 | Done: no DTD processing, 50 MB read cap, gzip cap | Pending owner approval | Publish approval | Owner: publish |
 | product-csv-lint | 4 | READY_TO_RELEASE | `packages/product-csv-lint` | `product-csv-lint` 1.0.0 (name free) | Stage 3 done | 75 passing (CSV parser, both platforms, CLI end-to-end) | README, CHANGELOG, examples, ADR 0003 | Done: offline, no network in CLI | Pending owner approval | Publish `websync-validators` 1.1.0 first | Owner: publish after validators |
-| websync-mcp | 5 | READY_TO_RELEASE | `packages/websync-mcp` | `websync-mcp` 1.0.0 (name free) | Stage 4 done | 33 passing, including the official SDK client over stdio | README, CHANGELOG, ADR 0004 | Done: tools take text only, no network or filesystem | Pending owner approval | Publish the four packages first | Owner: publish last |
-| redirect-inspector | 6 | PAUSED | n/a | n/a | Watchlist | n/a | n/a | Would need a public fetch service | n/a | Out of scope while the site is unchanged | n/a |
-| metacheck, schemaview, llms-txt-kit | 7 | PAUSED | n/a | n/a | Watchlist | n/a | n/a | n/a | n/a | n/a | n/a |
+| metacheck | 6 | READY_TO_RELEASE | `packages/metacheck` | `metacheck` 1.0.0 (name free) | Done | 131 passing (tokenizer with fuzz and linear-time tests, 41 rules, head/body tracking, CLI end-to-end); independent review fixed 5 defects | README, CHANGELOG, examples, ADR 0005 | Done: library offline, CLI read cap enforced while streaming | Pending owner approval | Publish approval | Owner: publish |
+| schemaview | 7 | READY_TO_RELEASE | `packages/schemaview` | `schemaview` 1.0.0 (name free) | Done | 190 passing (JSON parser vs `JSON.parse`, 23 rules, 18 rich-result types, CLI end-to-end); independent review fixed 5 defects and spot-checked 15 types against Google's pages | README, CHANGELOG, examples | Done: library offline, CLI read cap | Pending owner approval | Publish `metacheck` first | Owner: publish after metacheck |
+| llms-txt-kit | 8 | READY_TO_RELEASE | `packages/llms-txt-kit` | `llms-txt-kit` 1.0.0 (name free; `llmstxt-kit` exists) | Done | 90 passing (17 rules, build round trip with a 2000-case property test, CLI end-to-end); independent review fixed 5 defects including a ReDoS | README, CHANGELOG, examples | Done: library offline, CLI read cap | Pending owner approval | Publish approval | Owner: publish |
+| redirect-inspector | 9 | READY_TO_RELEASE | `packages/redirect-inspector` | `redirect-inspector` 1.0.0 (name free) | Done | 53 passing against a local HTTP server (12 rules, --expect, --map); independent review fixed 4 defects | README, CHANGELOG, example map | Done: network library tier (SECURITY-MODEL.md), http(s) only, timeouts, bodies never read | Pending owner approval | Publish approval | Owner: publish |
+| websync-mcp | 10 | READY_TO_RELEASE | `packages/websync-mcp` | `websync-mcp` 1.0.0 (name free) | Done | 41 passing, including the official SDK client calling all seven tools over stdio | README, CHANGELOG, ADR 0004 | Done: tools take text only, no network or filesystem | Pending owner approval | Publish the six offline packages first | Owner: publish last |
 | urlsmith, jsonlens, headerpeek, linkhound, crawlguard, sitegraph, regex-lab, text-diff-cli, mockroute, cronview, webtiming, webclean, agent-access-check | n/a | REJECTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | See TOOL-OPPORTUNITY-MATRIX.md |
 
 ## Numbered work items
@@ -34,3 +36,9 @@ the matching site tools, but the site keeps its own code.
 | R-8 | Archive `idrisiRehan/websync-validators` with a pointer to the monorepo once it's public | PLANNED | owner |
 | R-9 | `websync-mcp` 1.0 | Done, awaiting publish | agent |
 | R-10 | `product-csv-lint` 1.0 | Done, awaiting publish | agent |
+| R-11 | `metacheck` 1.0, with the shared HTML tokenizer (ADR 0005) | Done, awaiting publish | agent |
+| R-12 | `schemaview` 1.0 | Done, awaiting publish | agent |
+| R-13 | `llms-txt-kit` 1.0 | Done, awaiting publish | agent |
+| R-14 | `redirect-inspector` 1.0 | Done, awaiting publish | agent |
+| R-15 | `websync-mcp`: `lint_page_metadata`, `validate_structured_data`, `lint_llms_txt` | Done, part of 1.0.0 | agent |
+| R-16 | `schemaview` rule table: recheck Google's structured data docs and updates log | Every quarter (next: 2027-02) | agent |

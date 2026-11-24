@@ -2,7 +2,7 @@
 // Command-line front end: read a sitemap (file, stdin or URL, gzip or plain), lint it with
 // lintSitemap(), print the findings. All rules live in lint.ts.
 
-import { readFileSync, statSync } from "node:fs";
+import { createReadStream, readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { gunzipSync } from "node:zlib";
 import { lintSitemap, MAX_BYTES, type SitemapResult } from "./lint.ts";
@@ -30,7 +30,7 @@ const TOO_LARGE = `The sitemap is larger than the protocol's 50 MB limit (uncomp
 
 function parseIntOption(value: string | undefined, name: string, min: number, max: number): number | undefined {
   if (value === undefined) return undefined;
-  const n = Number(value);
+  const n = value.trim() === "" ? NaN : Number(value);
   if (!Number.isInteger(n) || n < min || n > max) throw new UsageError(`--${name} must be a whole number from ${min} to ${max}.`);
   return n;
 }
@@ -45,11 +45,20 @@ function gunzipIfNeeded(bytes: Uint8Array): Uint8Array {
   }
 }
 
-function readLocal(path: string): Uint8Array {
-  if (path !== "-" && statSync(path).size > MAX_BYTES) throw new Error(TOO_LARGE);
-  const bytes = readFileSync(path === "-" ? 0 : path);
-  if (bytes.byteLength > MAX_BYTES) throw new Error(TOO_LARGE);
-  return bytes;
+/** Reads a stream but stops once it passes MAX_BYTES, so a huge or endless input can't exhaust memory. */
+async function readCapped(stream: AsyncIterable<Uint8Array>): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for await (const chunk of stream) {
+    total += chunk.byteLength;
+    if (total > MAX_BYTES) throw new Error(TOO_LARGE); // leaving the loop cancels the stream
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks, total);
+}
+
+async function readLocal(path: string): Promise<Uint8Array> {
+  return await readCapped(path === "-" ? process.stdin : createReadStream(path));
 }
 
 async function readUrl(url: string, timeoutMs: number): Promise<{ label: string; bytes: Uint8Array }> {
@@ -62,26 +71,7 @@ async function readUrl(url: string, timeoutMs: number): Promise<{ label: string;
     await response.body?.cancel();
     throw new Error(`${response.url} answered HTTP ${response.status}.`);
   }
-  // Read at most the protocol limit, so a huge or endless response can't exhaust memory.
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  const reader = response.body.getReader();
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > MAX_BYTES) {
-      await reader.cancel();
-      throw new Error(TOO_LARGE);
-    }
-    chunks.push(value);
-  }
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
+  const bytes = await readCapped(response.body);
   return { label: `${response.url} (HTTP ${response.status})`, bytes };
 }
 
@@ -125,7 +115,7 @@ async function main(argv: string[]): Promise<number> {
 
   const target = positionals[0];
   const isUrl = /^https?:\/\//i.test(target);
-  const { label, bytes } = isUrl ? await readUrl(target, timeout) : { label: target === "-" ? "stdin" : target, bytes: readLocal(target) };
+  const { label, bytes } = isUrl ? await readUrl(target, timeout) : { label: target === "-" ? "stdin" : target, bytes: await readLocal(target) };
   const result = lintSitemap(gunzipIfNeeded(bytes));
 
   console.log(values.json ? JSON.stringify({ source: label, ...result }, null, 2) : formatText(label, result));

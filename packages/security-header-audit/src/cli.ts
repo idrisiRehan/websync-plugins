@@ -34,7 +34,7 @@ interface Source {
 
 function parseIntOption(value: string | undefined, name: string, min: number, max: number): number | undefined {
   if (value === undefined) return undefined;
-  const n = Number(value);
+  const n = value.trim() === "" ? NaN : Number(value);
   if (!Number.isInteger(n) || n < min || n > max) throw new UsageError(`--${name} must be a whole number from ${min} to ${max}.`);
   return n;
 }

@@ -157,7 +157,7 @@ flagged.
 The library never touches the network or the filesystem. The CLI fetches only the URL you give
 it, including `localhost`, so you can lint a dev server. Don't expose the CLI as a service that
 fetches URLs for other people without your own SSRF controls. See
-[SECURITY.md](../../SECURITY.md) to report a vulnerability.
+[SECURITY.md](https://github.com/idrisiRehan/websync-plugins/blob/main/SECURITY.md) to report a vulnerability.
 
 ## License
 

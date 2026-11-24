@@ -30,7 +30,7 @@ class UsageError extends Error {}
 
 function parseMaxWarnings(value: string | undefined): number | undefined {
   if (value === undefined) return undefined;
-  const n = Number(value);
+  const n = value.trim() === "" ? NaN : Number(value);
   if (!Number.isInteger(n) || n < 0) throw new UsageError("--max-warnings must be a whole number of 0 or more.");
   return n;
 }

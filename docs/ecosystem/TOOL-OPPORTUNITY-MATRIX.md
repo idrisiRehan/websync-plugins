@@ -68,6 +68,14 @@ Weighted score = sum of (score x weight) / 17.
    Node passes in a parser of the caller's choosing. The package stays dependency-free and
    never resolves external entities.
 
+### Update, 2026-11-24 (owner decision)
+
+The owner asked for the whole queue to be built: `metacheck`, `schemaview`, `llms-txt-kit` and
+`redirect-inspector` are now built and ready to publish (ROADMAP R-11 to R-14). The scores
+above are unchanged and still describe the evidence at the time. Download numbers after
+publication decide which of them get further work. `redirect-inspector` shipped as a CLI and
+library for operators, not as a public web tool, so it needs no site endpoint.
+
 ### Watchlist
 
 - **product-csv-lint.** Strongest ecommerce fit and no npm competitor found. But Shopify and

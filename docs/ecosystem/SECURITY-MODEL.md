@@ -3,11 +3,12 @@
 How WebSync packages and tools handle untrusted input and the network. This applies to every
 package in this repository and to any site tool built on one.
 
-## 1. Three tiers of network exposure
+## 1. Tiers of network exposure
 
 | Tier | Who triggers the fetch | Rule |
 |---|---|---|
 | **Library** | n/a | **No network access.** Library code takes data the caller already has (a headers object, XML text, an identifier). No `fetch`, sockets, DNS, filesystem or environment reads. That rules out SSRF, credential leakage and rate-limit abuse by construction. |
+| **Network library** (`redirect-inspector` only) | The calling code | The library's purpose is fetching, so it fetches the URL it is given and the redirect targets it is told to follow. http and https only, a timeout on every request, bodies cancelled unread, `fetch` injectable. It follows redirects to private addresses, so it gets the same "don't expose as is" rule as a CLI. Every other library stays in the tier above. |
 | **CLI** | The operator, on their own machine | Fetches only the URL given on the command line. `localhost` and private addresses are **allowed**, because testing a dev server is a legitimate use and the operator already has that network access. Bounded by a timeout. Doesn't read response bodies it doesn't need. Fixed `User-Agent` naming the package. |
 | **Public service** (websync.in `apis/`, any future hosted MCP) | Anyone on the internet | Every fetch of a caller-supplied URL goes through `safeFetch()` in the site's `apis/config.php`. Never call curl or `fetch` directly on caller input. Every route has a per-IP rate limit. |
 
@@ -46,8 +47,8 @@ bounds a single fetch, not a crawl.
 |---|---|
 | Huge input (memory) | Libraries process input in one linear pass. CLIs read headers only and cancel bodies. Sitemap linting will enforce the protocol's 50 MB and 50,000-URL limits before parsing further. |
 | Pathological regex (ReDoS) | No user-supplied regular expressions. Built-in patterns are anchored and linear. Review every new pattern for nested quantifiers. |
-| XML external entities | XML is parsed only by a DOM parser that doesn't resolve external entities (browser `DOMParser`, `@xmldom/xmldom` in Node). Libraries accept an already-parsed document. They never fetch DTDs. |
-| Malformed HTML or headers | Parsers skip what they can't read and report it. They never throw on bad input. Tests include malformed cases. |
+| XML external entities | `sitemap-lint` parses XML with its own reader, which skips any DOCTYPE and expands only the five predefined entities and numeric references (ADR 0002). External entities and entity expansion can't happen. |
+| Malformed HTML or headers | Parsers skip what they can't read and report it. They never throw on bad input. HTML goes through one shared tokenizer, which is fuzz-tested and linear (ADR 0005). Tests include malformed cases. |
 | Path traversal | CLIs read only the file path the operator passes. Nothing is written except to stdout. |
 | Shell execution | None. No `child_process` in published code. |
 | Secrets in logs | Libraries don't log. CLIs print only the result and fixed error messages. |

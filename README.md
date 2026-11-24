@@ -7,14 +7,20 @@ code, tests and pipelines.
 | Package | What it does | Web tool |
 |---|---|---|
 | [`websync-validators`](packages/validators) | Offline check-digit validation for EU/UK VAT numbers, IBANs (89 countries), Australian ABN/ACN, US routing numbers, Indian GSTINs, GTIN/EAN/UPC barcodes and ISBNs. Reports which check failed. | [VAT](https://websync.in/tools/vat-number-checker/), [IBAN](https://websync.in/tools/iban-validator/), [ABN](https://websync.in/tools/abn-validator/), [routing](https://websync.in/tools/routing-number-validator/), [GSTIN](https://websync.in/tools/gstin-validator/), [GTIN](https://websync.in/tools/gtin-converter/), [ISBN](https://websync.in/tools/isbn-asin-validator/) |
-| [`websync-mcp`](packages/websync-mcp) | Local MCP server that gives AI assistants all of the above as four offline tools. No network access. | n/a |
-| [`product-csv-lint`](packages/product-csv-lint) | Checks Shopify (current and legacy formats) and WooCommerce product CSVs before import: quoting, encoding, headers, prices, barcodes, variants and parents. | [Product CSV Validator](https://websync.in/tools/product-csv-validator/), [WooCommerce CSV Validator](https://websync.in/tools/woocommerce-csv-validator/) |
-| [`sitemap-lint`](packages/sitemap-lint) | Lints XML sitemaps and sitemap indexes against the sitemaps.org protocol, with line numbers. XXE-safe, reads files, URLs and `.xml.gz`. | [Sitemap Validator](https://websync.in/tools/sitemap-validator/) |
 | [`security-header-audit`](packages/security-header-audit) | Grades HTTP security headers (HSTS, CSP, clickjacking, nosniff, Referrer-Policy, Permissions-Policy) offline, with a CLI for CI. | [Security Header Checker](https://websync.in/tools/security-header-checker/) |
+| [`sitemap-lint`](packages/sitemap-lint) | Lints XML sitemaps and sitemap indexes against the sitemaps.org protocol, with line numbers. XXE-safe, reads files, URLs and `.xml.gz`. | [Sitemap Validator](https://websync.in/tools/sitemap-validator/) |
+| [`product-csv-lint`](packages/product-csv-lint) | Checks Shopify (current and legacy formats) and WooCommerce product CSVs before import: quoting, encoding, headers, prices, barcodes, variants and parents. | [Product CSV Validator](https://websync.in/tools/product-csv-validator/), [WooCommerce CSV Validator](https://websync.in/tools/woocommerce-csv-validator/) |
+| [`metacheck`](packages/metacheck) | Lints a page's HTML for search and sharing metadata: title, description, canonical, robots, Open Graph, X cards, headings, hreflang, and metadata placed outside head. Line numbers, no fetching in the library. | [SEO Analyzer](https://websync.in/tools/seo-analyzer/) |
+| [`schemaview`](packages/schemaview) | Validates JSON-LD structured data against the properties Google documents for rich results, with line numbers and JSON paths. Flags deprecated types. | n/a |
+| [`llms-txt-kit`](packages/llms-txt-kit) | Lints and builds `llms.txt` files per the llmstxt.org proposal. | n/a |
+| [`redirect-inspector`](packages/redirect-inspector) | Follows redirect chains hop by hop and reports loops, downgrades, long chains and bad final statuses. Verifies a whole redirect map after a site migration. | n/a |
+| [`websync-mcp`](packages/websync-mcp) | Local MCP server that gives AI assistants the offline packages above as seven tools. No network access. | n/a |
 
-Every package is TypeScript and ESM, and makes no network calls in its library code. None
-has a third-party runtime dependency. `product-csv-lint` and `websync-mcp` use other packages
-from this repository (ADR 0003, 0004).
+Every package is TypeScript and ESM, and none has a third-party runtime dependency. Library
+code makes no network calls, except `redirect-inspector`, whose job is fetching
+([security model](docs/ecosystem/SECURITY-MODEL.md)). Some packages use others from this
+repository: `product-csv-lint` uses `websync-validators`, `schemaview` uses the HTML tokenizer
+in `metacheck`, and `websync-mcp` uses all the offline packages (ADR 0003, 0004, 0005).
 
 ## Working on this repository
 
