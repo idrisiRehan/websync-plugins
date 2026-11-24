@@ -75,6 +75,23 @@ export function propertyOf(graph: Graph, node: JsonObject, key: string): JsonNod
   return mergedProps(graph, id)?.get(key);
 }
 
+/**
+ * Each variant's ProductGroup, whichever side of the link is written: the group's hasVariant or
+ * the variant's isVariantOf (its first object value). The first link in document order wins.
+ */
+export function variantGroups(graph: Graph): Map<JsonObject, JsonObject> {
+  const groupOf = new Map<JsonObject, JsonObject>();
+  for (const node of graph.paths.keys()) {
+    if (node.kind !== "object" || isReference(node)) continue;
+    if ((typesOf(node) ?? []).includes("ProductGroup")) {
+      for (const variant of valuesOf(graph, node, "hasVariant")) if (variant.kind === "object" && !groupOf.has(variant)) groupOf.set(variant, node);
+    }
+    const parent = valuesOf(graph, node, "isVariantOf").find((v): v is JsonObject => v.kind === "object");
+    if (parent && !groupOf.has(node)) groupOf.set(node, parent);
+  }
+  return groupOf;
+}
+
 /** Present values of a property: arrays flattened, @id references resolved, empty values dropped. */
 export function valuesOf(graph: Graph, node: JsonObject, key: string): JsonNode[] {
   const value = propertyOf(graph, node, key);

@@ -119,10 +119,30 @@ describe("JSON-LD structure", () => {
   });
 
   test("a non-schema.org context", () => {
-    for (const context of ["https://example.com/vocab", "https://schema.org.evil.com/", "https://www.schema.org", { name: "https://schema.org/name" }, 7]) {
+    for (const context of ["https://example.com/vocab", "https://schema.org.evil.com/", "https://www.schema.org.evil.com/", "https://ww.schema.org", { name: "https://schema.org/name" }, 7]) {
       const f = only(validateStructuredData(JSON.stringify({ "@context": context, ...THING })), "context-invalid");
       assert.equal(f.path, '$["@context"]');
+      assert.equal(f.severity, "error", JSON.stringify(context));
+      assert.match(f.message, /isn't schema\.org\. Use "https:\/\/schema\.org"\.$/);
     }
+  });
+
+  // www.schema.org serves the same JSON-LD context, but only schema.org is documented.
+  test("a www.schema.org context is a warning, not an error, naming the documented form", () => {
+    for (const context of ["http://www.schema.org", "https://www.schema.org", "http://www.schema.org/", "https://www.schema.org/", { "@vocab": "https://www.schema.org/" }, ["https://www.schema.org", { ex: "https://example.com/ns#" }]]) {
+      const r = validateStructuredData(JSON.stringify({ "@context": context, ...THING }));
+      const f = only(r, "context-invalid");
+      assert.equal(f.severity, "warning", JSON.stringify(context));
+      assert.equal(r.valid, true);
+      assert.equal(f.path, '$["@context"]');
+      assert.match(f.message, /uses www\.schema\.org\. That host serves the same JSON-LD context, but Google's documentation and schema\.org only use schema\.org without www/);
+      assert.match(f.message, /Use "https:\/\/schema\.org"\.$/);
+    }
+  });
+
+  test("a documented schema.org form alongside www.schema.org is not flagged", () => {
+    const r = validateStructuredData(JSON.stringify({ "@context": ["https://www.schema.org", "https://schema.org"], ...THING }));
+    assert.deepEqual(r.findings, []);
   });
 
   test("every item of a top-level array needs its own @context", () => {

@@ -11,16 +11,22 @@ const PERSON = { "@type": "Person", name: "Asha Rao", url: "https://example.com/
 const ADDRESS = { "@type": "PostalAddress", streetAddress: "1 Main St", addressLocality: "Pune", addressRegion: "MH", postalCode: "411001", addressCountry: "IN" };
 const RATING = { "@type": "AggregateRating", ratingValue: 4.4, reviewCount: 89 };
 const REVIEW = { "@type": "Review", author: PERSON, reviewRating: { "@type": "Rating", ratingValue: 4 }, datePublished: "2026-10-01" };
+const OFFER = {
+  "@type": "Offer", price: "89.99", priceCurrency: "USD", availability: "https://schema.org/InStock", priceValidUntil: "2026-12-31",
+  itemCondition: "https://schema.org/NewCondition", shippingDetails: { "@id": "#ship" }, hasMerchantReturnPolicy: { "@id": "#returns" },
+};
+// A variant with everything a merchant listing asks for except what its group holds for all variants.
+const variant = (size: string) => ({ "@type": "Product", name: `Wool coat - ${size}`, size, image: IMG, description: "d", gtin13: "4006381333931", mpn: `WC-${size}`, sku: `WC-${size}`, offers: OFFER });
 
 const EXAMPLES: Record<string, Record<string, unknown>> = {
   Article: { "@type": "NewsArticle", headline: "h", image: [IMG], datePublished: "2026-11-20T08:00:00+05:30", dateModified: "2026-11-21T08:00:00+05:30", author: [PERSON] },
   "Product snippet": {
     "@type": "Product", name: "Trail Runner", image: IMG, description: "d", brand: { "@type": "Brand", name: "B" }, gtin13: "4006381333931", mpn: "TR-1", sku: "TR-1-42",
-    aggregateRating: RATING, review: REVIEW,
-    offers: {
-      "@type": "Offer", price: "89.99", priceCurrency: "USD", availability: "https://schema.org/InStock", priceValidUntil: "2026-12-31",
-      itemCondition: "https://schema.org/NewCondition", shippingDetails: { "@id": "#ship" }, hasMerchantReturnPolicy: { "@id": "#returns" },
-    },
+    aggregateRating: RATING, review: REVIEW, offers: OFFER,
+  },
+  "Product variants": {
+    "@type": "ProductGroup", name: "Wool coat", description: "d", brand: { "@type": "Brand", name: "B" }, productGroupID: "WC", variesBy: ["https://schema.org/size"],
+    aggregateRating: RATING, review: REVIEW, hasVariant: [variant("S"), variant("L")],
   },
   "Review snippet": { "@type": "Review", author: PERSON, itemReviewed: { "@type": "Book", name: "A Book" }, reviewRating: { "@type": "Rating", ratingValue: 5 }, datePublished: "2026-10-01" },
   Breadcrumb: {
@@ -183,6 +189,68 @@ describe("type-specific rules", () => {
       r.findings.filter((f) => f.rule === "type-ineligible").map((f) => [f.severity, f.path, f.message]),
       [["warning", "$.offers", "offers has @type AggregateOffer. Merchant listings need an Offer, because the merchant must be the seller. AggregateOffer still works for product snippets."]],
     );
+  });
+
+  // Google's product variants docs: add Product structured data to each variant "following the
+  // list of required properties for merchant listings (or product snippets)".
+  test("a ProductGroup's hasVariant products are checked against product snippet and merchant listing", () => {
+    const group = EXAMPLES["Product variants"];
+    const r = ld({ ...group, hasVariant: [variant("S"), { "@type": "Product", name: "Wool coat - L", sku: "WC-L", offers: { "@type": "Offer", price: "89.99" } }] });
+    assert.deepEqual(
+      r.entities.filter((e) => e.types.includes("Product") || e.types.includes("ProductGroup")).map((e) => [e.path, e.richResults]),
+      [["$", ["Product variants"]], ["$.hasVariant[0]", ["Product snippet", "Merchant listing"]], ["$.hasVariant[1]", ["Product snippet", "Merchant listing"]]],
+    );
+    assert.deepEqual(errors(r), [
+      '$.hasVariant[1].image: Missing "image", required for Merchant listing per Google\'s documentation.',
+      '$.hasVariant[1].offers: Missing one of "priceCurrency" or "priceSpecification.priceCurrency", required for Merchant listing per Google\'s documentation.',
+    ]);
+  });
+
+  test("a variant's bad price is an error, because the merchant listing requires it", () => {
+    const r = ld({ ...EXAMPLES["Product variants"], hasVariant: [{ ...variant("S"), offers: { ...OFFER, price: "$89.99" } }] });
+    assert.deepEqual(r.findings.map((f) => [f.rule, f.severity, f.path]), [["price-invalid", "error", "$.hasVariant[0].offers.price"]]);
+  });
+
+  test("variants take brand, aggregateRating and review from their group", () => {
+    // Without offers, the variant's product snippet requirement (review, aggregateRating or offers) is met by the group's rating.
+    const { offers: _offers, ...noOffers } = variant("S");
+    const r = ld({ ...EXAMPLES["Product variants"], hasVariant: [noOffers] });
+    assert.deepEqual(r.findings.map((f) => `${f.rule} ${f.path}`), ["property-recommended $.hasVariant[0].offers"]);
+    assert.deepEqual(r.entities[r.entities.length - 1].richResults, ["Product snippet"]);
+  });
+
+  test("a shared property missing from the group and its variants is reported once, on the group", () => {
+    const { review: _review, aggregateRating: _rating, brand: _brand, ...group } = EXAMPLES["Product variants"];
+    const r = ld(group);
+    assert.equal(r.valid, true);
+    assert.deepEqual(r.findings.map((f) => `${f.path}: ${f.message}`), [
+      '$.aggregateRating: Missing "aggregateRating", recommended for Product variants per Google\'s documentation.',
+      '$.brand: Missing "brand", recommended for Product variants per Google\'s documentation.',
+      '$.review: Missing "review", recommended for Product variants per Google\'s documentation.',
+    ]);
+  });
+
+  test("a ProductGroup needs a name, and lists its recommended properties", () => {
+    const r = ld({ "@type": "ProductGroup" });
+    assert.deepEqual(errors(r), ['$.name: Missing "name", required for Product variants per Google\'s documentation.']);
+    assert.deepEqual(
+      r.findings.filter((f) => f.rule === "property-recommended").map((f) => f.path),
+      ["$.aggregateRating", "$.brand", "$.description", "$.hasVariant", "$.productGroupID", "$.review", "$.variesBy"],
+    );
+  });
+
+  test("variants that point to their group with isVariantOf take its shared properties too", () => {
+    const { hasVariant: _variants, ...group } = EXAMPLES["Product variants"];
+    const r = ld({ "@graph": [{ ...group, "@id": "#coat", hasVariant: { "@id": "#coat-s" } }, { ...variant("S"), "@id": "#coat-s", isVariantOf: { "@id": "#coat" } }] });
+    assert.deepEqual(r.findings, []);
+    // Without hasVariant the group is still asked for it (a documented limitation), but the variant inherits.
+    const standalone = ld({ "@graph": [{ ...group, "@id": "#coat" }, { ...variant("S"), isVariantOf: { "@id": "#coat" } }] });
+    assert.deepEqual(standalone.findings.map((f) => f.path), ["$[\"@graph\"][0].hasVariant"]);
+  });
+
+  test("a top-level Product with no group still needs its own brand and ratings", () => {
+    const r = ld(variant("S"));
+    assert.deepEqual(r.findings.map((f) => f.path), ["$.aggregateRating", "$.review", "$.brand.name"]);
   });
 
   test("nested reviews and ratings are checked without itemReviewed", () => {

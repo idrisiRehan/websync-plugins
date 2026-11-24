@@ -39,7 +39,7 @@ ERROR  json-invalid (line 10)
 1 error, 0 warnings
 ```
 
-- **Rich-result rules as data.** Required and recommended properties for 18 Google rich-result
+- **Rich-result rules as data.** Required and recommended properties for 19 Google rich-result
   types live in one table, each entry with its Search Central source and the date it was
   checked. Deprecated features (FAQ, How-to, Fact check and others) are reported as such.
 - **Structure and values.** Invalid JSON, `@context`, `@type`, `@graph`, nested and referenced
@@ -209,9 +209,9 @@ other products, so they aren't listed. Never throws.
 
 ## Supported rich results
 
-Data checked against Google Search Central on **2026-11-24**. A dotted name like `author.name`
-is a nested property; "a or b" means at least one of them. Nested rows apply to each value of
-that property.
+Data checked against Google Search Central on **2026-11-24** (Product variants on
+**2026-11-25**). A dotted name like `author.name` is a nested property; "a or b" means at least
+one of them. Nested rows apply to each value of that property.
 
 | Feature | Types | Required | Recommended |
 |---|---|---|---|
@@ -224,6 +224,8 @@ that property.
 | [Merchant listing](https://developers.google.com/search/docs/appearance/structured-data/merchant-listing) | `Product` with `offers` | `name`, `image`, `offers` | `description`, `brand.name`, a GTIN (`gtin`, `gtin8`, `gtin12`, `gtin13`, `gtin14` or `isbn`), `mpn`, `sku` |
 | | `offers` (Offer) | `price`, `priceCurrency` (or in `priceSpecification`) | `availability`, `itemCondition`, `shippingDetails`, `hasMerchantReturnPolicy` |
 | | `offers` (AggregateOffer) | not eligible: reported as `type-ineligible`, because the merchant must be the seller | |
+| [Product variants](https://developers.google.com/search/docs/appearance/structured-data/product-variants) | `ProductGroup` | `name` | `aggregateRating`, `brand`, `brand.name`, `description`, `hasVariant`, `productGroupID`, `review`, `variesBy` |
+| | `hasVariant` (Product) | each variant is checked as a Product: the Product snippet and Merchant listing rows above. `aggregateRating`, `brand` and `review` may come from the group | |
 | [Review snippet](https://developers.google.com/search/docs/appearance/structured-data/review-snippet) | `Review` | `author`, `author.name`, `reviewRating`, `reviewRating.ratingValue`, `itemReviewed`, `itemReviewed.name` | `datePublished` |
 | | `AggregateRating` | `ratingValue`, `ratingCount` or `reviewCount`, `itemReviewed`, `itemReviewed.name` | |
 | [Breadcrumb](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb) | `BreadcrumbList` (at any depth) | `itemListElement` (at least 2) | |
@@ -245,17 +247,19 @@ that property.
 | [Q&A](https://developers.google.com/search/docs/appearance/structured-data/qapage) | `QAPage` | `mainEntity` with `name`, `answerCount`, `acceptedAnswer` or `suggestedAnswer`; each answer's `text` | question `text`, `author`, `datePublished`; answer `author`, `url`, `datePublished` |
 | [Employer aggregate rating](https://developers.google.com/search/docs/appearance/structured-data/employer-rating) | `EmployerAggregateRating` | `itemReviewed`, `ratingValue`, `ratingCount` or `reviewCount` | |
 
-Ratings nested in other types (Recipe, Software app, Movie) use the same `aggregateRating` and
+Ratings nested in other types (Product variants, Recipe, Software app, Movie) use the same `aggregateRating` and
 `review` rules as Product. `bestRating` and `worstRating` aren't flagged when missing, because
 Google assumes 5 and 1; `ratingValue` is checked against those bounds instead.
 
 Recommended lists keep what applies to most pages. Situational properties (`expires`,
 `regionsAllowed`, variant attributes like `color` and `size`, identifiers like `duns` or
-`naics`) are left out so a typical page isn't buried in warnings.
+`naics`, a ProductGroup's single-page `url` and `hasAdultConsideration`) are left out so a
+typical page isn't buried in warnings.
 
-Rich results are matched on top-level nodes, `@graph` nodes, `mainEntity` values and
-`ItemList` items, plus `VideoObject` and `BreadcrumbList` at any depth. A Product nested in an
-article's `about` isn't checked as a product page. `@id` references are followed when they
+Rich results are matched on top-level nodes, `@graph` nodes, `mainEntity` values, `ItemList`
+items and a top-level `ProductGroup`'s `hasVariant` products, plus `VideoObject` and
+`BreadcrumbList` at any depth. A Product nested in an article's `about` isn't checked as a
+product page. `@id` references are followed when they
 point at a node defined elsewhere on the page, and nodes that share an `@id` are merged.
 
 **No longer shown by Google** (reported as `type-deprecated`, not checked further):
@@ -278,7 +282,7 @@ point at a node defined elsewhere on the page, and nodes that share an `@id` are
 | `json-duplicate-key` | warning | The same key twice in one object. Only the last value counts |
 | `root-invalid` | error | The JSON isn't an object or an array of objects |
 | `context-missing` | error | A top-level node has no `@context` |
-| `context-invalid` | error | `@context` isn't schema.org (http or https, with or without `/`, as a string, `@vocab` or in an array) |
+| `context-invalid` | error or warning | `@context` isn't schema.org (http or https, with or without `/`, as a string, `@vocab` or in an array). A warning for `www.schema.org`, which serves the same JSON-LD context but isn't the documented form |
 | `type-missing` | error | A top-level or `@graph` node with properties but no `@type` |
 | `type-invalid` | error | `@type` isn't a type name or an array of them |
 | `id-conflict` | warning | Two nodes share an `@id` but give the same property different values |
@@ -346,6 +350,10 @@ Offer's `price`, an Event's `startDate`), and warnings otherwise. Dates checked:
   whether the markup matches what the page shows.
 - **No schema.org vocabulary check.** Unknown types and properties (typos like `Prodcut`)
   aren't flagged; such a node simply matches no rich result, which `entities` shows.
+- **Variant links are read one way for recommendations.** A `ProductGroup` is asked for
+  `hasVariant` and `productGroupID` even when its variants point to it with `isVariantOf` and
+  `inProductGroupWithID` instead, which Google also accepts. Variants take only `brand`,
+  `aggregateRating` and `review` from their group.
 - **Subtypes are listed, not inferred.** Common subtypes of Article, Organization,
   LocalBusiness and Event are recognised; a rare subtype outside those lists isn't checked.
 - **Pages are read as served.** JSON-LD injected by JavaScript after load isn't seen, and

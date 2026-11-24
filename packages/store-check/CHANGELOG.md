@@ -22,8 +22,9 @@ All notable changes to `store-check` are recorded here. The format follows
   id, source package and location. No invented score.
 - Crawler access for Googlebot and each AI crawler in `robots-txt-lint`'s list, on the home page
   and the product page, and whether the product page has a valid Product snippet or Merchant
-  listing rich result. A `ProductGroup`, a nested `Product`, or Microdata or RDFa markup, which
-  schemaview doesn't check, is reported as not checked, never as missing.
+  listing rich result. A `ProductGroup` is reported with its variants' results. A `Product` or
+  `ProductGroup` nested in another node, or Microdata or RDFa markup, which schemaview doesn't
+  check, is reported as not checked, never as missing.
 - No false positives from bot protection or catch-all pages: only a 404 or 410 (or an HTML page
   served in its place) counts as a missing sitemap or llms.txt, and a 401 or 403 is reported as
   a fact.

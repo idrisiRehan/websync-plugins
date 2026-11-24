@@ -131,9 +131,32 @@ function allowsAllInline(sources: string[], isScript: boolean): boolean {
   return sources.includes("'unsafe-inline'");
 }
 
-// One check per thing 'unsafe-inline'/'unsafe-eval' can unlock, with the fallback chain that
-// governs it. Returns true/false for whether that policy allows it, or null if it's ungoverned.
-const CSP_CHECKS: { id: "eval" | "scripts" | "event handlers" | "styles"; allows: (p: CspPolicy) => boolean | null }[] = [
+// Source expressions that match any host, per CSP3 s6.7.2.8 "Does url match expression in origin
+// with redirect count?": "*" matches every URL whose scheme is an HTTP(S) scheme; a scheme-source
+// (https:, or http:, which also matches https: per s6.7.2.9) matches every URL with that scheme;
+// and a host-source whose host-part is "*" matches any host (s6.7.2.10), whatever its port or path.
+const ANY_HOST = /^(?:https?:|(?:https?:\/\/)?\*(?:[:/].*)?)$/;
+const anyHostSources = (sources: string[]) => sources.filter((s) => ANY_HOST.test(s));
+
+const SCRIPT_ELEM_FALLBACK = ["script-src-elem", "script-src", "default-src"];
+
+// One check per weakness, with the fallback chain that governs it. Returns true/false for
+// whether that policy allows it, or null if it's ungoverned.
+const CSP_CHECKS: { id: "script sources" | "eval" | "scripts" | "event handlers" | "styles"; allows: (p: CspPolicy) => boolean | null }[] = [
+  {
+    // CSP3 s6.1.10 script-src: inline script is blocked unless every policy allows it, "either
+    // implicitly by not specifying a script-src (or default-src) directive, or explicitly", and
+    // script requests are matched against the same fallback list (s6.8.3). So a policy with no
+    // governing directive, or one that matches any host, doesn't restrict scripts and is no
+    // protection against XSS; this is flagged only when no policy restricts them.
+    // 'strict-dynamic' makes CSP3 browsers ignore host-source and scheme-source expressions
+    // when loading script (s8.2), so `https:` beside it is only a fallback for older browsers.
+    id: "script sources",
+    allows: (p) => {
+      const list = governingSources(p, SCRIPT_ELEM_FALLBACK);
+      return !list || (anyHostSources(list).length > 0 && !list.includes("'strict-dynamic'"));
+    },
+  },
   {
     // CSP3 s4.4.1 EnsureCSPDoesNotBlockStringCompilation: eval() is governed by script-src, then
     // default-src, and needs the exact keyword 'unsafe-eval'. 'wasm-unsafe-eval' (s2.3.1, s4.5.1
@@ -148,7 +171,7 @@ const CSP_CHECKS: { id: "eval" | "scripts" | "event handlers" | "styles"; allows
   {
     id: "scripts",
     allows: (p) => {
-      const list = governingSources(p, ["script-src-elem", "script-src", "default-src"]);
+      const list = governingSources(p, SCRIPT_ELEM_FALLBACK);
       return list && allowsAllInline(list, true);
     },
   },
@@ -171,8 +194,8 @@ const CSP_CHECKS: { id: "eval" | "scripts" | "event handlers" | "styles"; allows
 ];
 
 // Every policy is enforced (CSP3 s3.1), so something is only allowed if no policy forbids it -
-// and it's only flagged when at least one policy explicitly grants it (a policy with no
-// governing directive isn't penalised: strength beyond these keywords isn't graded).
+// and it's only flagged when at least one policy grants it (for the keywords, a policy with no
+// governing directive isn't penalised; for script sources, see that check).
 function weakCspChecks(policies: CspPolicy[]): Set<string> {
   const weak = new Set<string>();
   for (const check of CSP_CHECKS) {
@@ -293,16 +316,23 @@ export function analyzeHeaders(input: HeaderInput): HeaderAuditResult {
 
     if (weak.size > 0) {
       const inlineKinds = (["scripts", "event handlers", "styles"] as const).filter((k) => weak.has(k));
+      const openSources = [...new Set(cspPolicies.flatMap((p) => anyHostSources(governingSources(p, SCRIPT_ELEM_FALLBACK) ?? [])))];
       const found = [
+        ...(weak.has("script sources")
+          ? [`scripts from any site (${openSources.length ? `its script sources include ${joinList(openSources)}` : "it has no script-src or default-src directive"})`]
+          : []),
         ...(inlineKinds.length ? [`'unsafe-inline' for ${joinList([...inlineKinds])}`] : []),
         ...(weak.has("eval") ? ["'unsafe-eval'"] : []),
       ];
+      const xss = weak.has("script sources")
+        ? " It only protects against XSS when script-src (or default-src) limits scripts to specific sources, nonces or hashes."
+        : "";
       rules.push({
         id: "csp-unsafe",
         name: "Content-Security-Policy",
         category: "Content Security",
         status: "warning",
-        message: `Present, but allows ${joinList(found)} - these significantly weaken CSP's protection against injected code.${noteText}`,
+        message: `Present, but allows ${joinList(found)} - these significantly weaken CSP's protection against injected code.${xss}${noteText}`,
         scoreImpact: 5,
       });
       deduct(5);
@@ -312,7 +342,7 @@ export function analyzeHeaders(input: HeaderInput): HeaderAuditResult {
         name: "Content-Security-Policy",
         category: "Content Security",
         status: "passed",
-        message: `Present without 'unsafe-inline'/'unsafe-eval' in effect.${noteText}`,
+        message: `Present, restricts where scripts load from, and has no 'unsafe-inline'/'unsafe-eval' in effect.${noteText}`,
         scoreImpact: 0,
       });
     }
@@ -351,13 +381,29 @@ export function analyzeHeaders(input: HeaderInput): HeaderAuditResult {
   }
 
   // 4. Clickjacking protection - X-Frame-Options or CSP frame-ancestors
-  // HTML Standard s7.7 "The X-Frame-Options header": an enforced CSP with a frame-ancestors
-  // directive makes the browser ignore X-Frame-Options entirely, so frame-ancestors alone is
-  // enough (its value isn't graded). Otherwise see evaluateXfo() for how XFO is read.
+  // HTML Standard s7.7 "The X-Frame-Options header" and CSP3 s6.4.2.2: an enforced CSP with a
+  // frame-ancestors directive makes the browser ignore X-Frame-Options entirely, whatever its
+  // value. CSP3 s6.4.2: every ancestor's origin must match the directive's list, so it restricts
+  // framing unless the list matches any host ("*", https:, http: or *-host sources, see
+  // ANY_HOST); only 'none', 'self' or specific sources protect. Every policy is enforced, so one
+  // restricting frame-ancestors is enough. Otherwise see evaluateXfo() for how XFO is read.
   const xfo = get(headers, "x-frame-options");
-  const hasFrameAncestors = cspPolicies.some((p) => p.has("frame-ancestors"));
+  const frameAncestors = cspPolicies.map((p) => p.get("frame-ancestors")).filter((list) => list !== undefined);
+  const hasFrameAncestors = frameAncestors.length > 0;
+  const restrictsFraming = frameAncestors.some((list) => anyHostSources(list).length === 0);
   const xfoResult = evaluateXfo(xfo);
-  if (hasFrameAncestors) {
+  if (hasFrameAncestors && !restrictsFraming) {
+    const open = [...new Set(frameAncestors.flatMap(anyHostSources))];
+    rules.push({
+      id: "clickjack-invalid",
+      name: "Clickjacking protection",
+      category: "Clickjacking",
+      status: "failed",
+      message: `CSP frame-ancestors includes ${joinList(open)}, which lets any site embed this page in an invisible iframe for a clickjacking attack, and browsers ignore X-Frame-Options when frame-ancestors is present${xfo ? `, so X-Frame-Options "${xfo}" has no effect` : ""}. Use frame-ancestors 'none', 'self' or a list of specific origins.`,
+      scoreImpact: 10,
+    });
+    deduct(10);
+  } else if (hasFrameAncestors) {
     rules.push({
       id: "clickjack-ok",
       name: "Clickjacking protection",

@@ -488,6 +488,8 @@ const PRODUCT_TYPES = new Set(["Product", "ProductGroup"]);
 /** A Microdata itemtype or RDFa typeof naming Product or ProductGroup, which schemaview doesn't read. */
 const OTHER_SYNTAX_PRODUCT = /\b(?:itemtype\s*=\s*["']?[^"'>]*schema\.org\/|typeof\s*=\s*["']?(?:[^"'>]*\s)?(?:schema:)?)Product(?:Group)?\b/i;
 
+const andList = (items: string[]) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
+
 function typesFact(label: string, result: StructuredDataResult): string {
   const features = [...new Set(result.entities.flatMap((e) => e.richResults))];
   if (!result.blockCount) return `The ${label} has no JSON-LD.`;
@@ -509,17 +511,17 @@ function structuredDataSection(home: Page | null, product: Page | null): Section
     const products = result.entities.filter((e) => e.types.some((t) => PRODUCT_TYPES.has(t)));
     const features = [...new Set(products.flatMap((e) => e.richResults))];
     if (!features.length && products.length) {
-      // A ProductGroup (Shopify's variants markup), or a Product nested in another node: Google reads them, schemaview doesn't check them.
-      facts.push("Product rich result: not checked. The product page's Product markup is a ProductGroup (product variants) or a nested Product, which schemaview doesn't check against Google's rules.");
+      // A Product or ProductGroup nested in another node (such as a WebPage's about): Google may read it, schemaview doesn't check it.
+      facts.push("Product rich result: not checked. The product page's Product or ProductGroup markup is nested in another node, which schemaview doesn't check against Google's rules.");
     } else if (!features.length && OTHER_SYNTAX_PRODUCT.test(page.html)) {
       facts.push("Product rich result: not checked. The product page marks up its Product with Microdata or RDFa, which schemaview doesn't read.");
     } else if (!features.length) {
       facts.push("Product rich result: none, because the product page has no Product markup.");
       findings.push(own("product-markup-missing", "warning", "The product page has no Product structured data, so it can't get Product snippet or Merchant listing rich results.", url));
     } else if (result.errorCount === 0) {
-      facts.push(`Product rich result: ${features.join(" and ")} valid.`);
+      facts.push(`Product rich result: ${andList(features)} valid.`);
     } else {
-      facts.push(`Product rich result: ${features.join(" and ")} checked, but the product page's structured data has ${plural(result.errorCount, "error")}.`);
+      facts.push(`Product rich result: ${andList(features)} checked, but the product page's structured data has ${plural(result.errorCount, "error")}.`);
     }
   }
   if (!checked) facts.push("No page could be read.");

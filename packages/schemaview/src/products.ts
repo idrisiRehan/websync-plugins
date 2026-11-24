@@ -3,7 +3,7 @@
 // nothing; validateStructuredData() does the checking. Pure and offline.
 
 import { extractJsonLd } from "./extract.ts";
-import { idOf, index, isReference, typesOf, valuesOf, SCHEMA_ORG_PREFIX, type Graph } from "./graph.ts";
+import { idOf, index, typesOf, valuesOf, variantGroups, SCHEMA_ORG_PREFIX, type Graph } from "./graph.ts";
 import { parseJson, type JsonNode, type JsonObject } from "./json.ts";
 
 export interface PriceSpecificationData {
@@ -140,15 +140,7 @@ export function readProducts(input: string): ProductsResult {
     ...where(node),
   });
 
-  // Which ProductGroup each variant belongs to, whichever side of the link is written.
-  const groupOf = new Map<JsonObject, JsonObject>();
-  for (const node of graph.paths.keys()) {
-    if (node.kind !== "object" || isReference(node)) continue;
-    const types = typesOf(node) ?? [];
-    if (types.includes("ProductGroup")) for (const variant of objects(node, "hasVariant")) if (!groupOf.has(variant)) groupOf.set(variant, node);
-    const parent = objects(node, "isVariantOf")[0];
-    if (parent && isProduct(node) && !groupOf.has(node)) groupOf.set(node, parent);
-  }
+  const groupOf = variantGroups(graph);
 
   const products: ProductData[] = [];
   const seenIds = new Set<string>();

@@ -504,7 +504,7 @@ describe("bad input throws", () => {
 });
 
 describe("no false positives", () => {
-  test("a Shopify ProductGroup of variants is Product markup, though schemaview doesn't check it", async () => {
+  test("a Shopify ProductGroup of variants is checked: the group, and each variant as a product", async () => {
     const group = ldScript(`{
   "@context": "https://schema.org",
   "@type": "ProductGroup",
@@ -515,7 +515,16 @@ describe("no false positives", () => {
     const { report } = await check({ "/products/wool-runner": html(productPage(ORIGIN, group)) });
     const sd = get(report, "structured-data");
     assert.ok(!rules(sd).includes("product-markup-missing"));
-    assert.match(facts(sd), /Product rich result: not checked\. The product page's Product markup is a ProductGroup \(product variants\)/);
+    // The variant has no image, which merchant listings require.
+    assert.match(facts(sd), /Product rich result: Product variants, Product snippet and Merchant listing checked, but the product page's structured data has 1 error\./);
+  });
+
+  test("a Product nested in another node is Product markup, though schemaview doesn't check it", async () => {
+    const nested = ldScript(`{ "@context": "https://schema.org", "@type": "WebPage", "about": { "@type": "Product", "name": "Wool Runner" } }`);
+    const { report } = await check({ "/products/wool-runner": html(productPage(ORIGIN, nested)) });
+    const sd = get(report, "structured-data");
+    assert.ok(!rules(sd).includes("product-markup-missing"));
+    assert.match(facts(sd), /Product rich result: not checked\. The product page's Product or ProductGroup markup is nested in another node/);
   });
 
   test("Product markup in Microdata or RDFa is not reported missing", async () => {

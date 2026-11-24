@@ -38,6 +38,11 @@ export interface RichResultType extends Shape {
   appliesWhen?: string;
   /** Match nodes at any depth, not only top-level, @graph, mainEntity and list items. */
   matchNested?: boolean;
+  /**
+   * Properties this group type holds for all its variants (its hasVariant values, and products
+   * that name it in isVariantOf): a variant that lacks one is checked with the group's value.
+   */
+  sharedWithVariants?: readonly string[];
 }
 
 const DOCS = "https://developers.google.com/search/docs/appearance/structured-data/";
@@ -132,6 +137,22 @@ export const RICH_RESULT_TYPES: readonly RichResultType[] = [
         { required: [PRICE, PRICE_CURRENCY], recommended: ["availability", "itemCondition", "shippingDetails", "hasMerchantReturnPolicy"] },
       ],
     },
+  },
+  {
+    // The group's own properties. Its variants are Products, matched against the two entries
+    // above like a top-level Product: Google says to add Product structured data "following the
+    // list of required properties for merchant listings (or product snippets)". A variant may
+    // leave to its group what the group holds "same across all variants" (brand) or
+    // "representative of all variants" (aggregateRating, review). url (single-page sites only)
+    // and hasAdultConsideration (adult-oriented products only) are situational, so left out.
+    feature: "Product variants",
+    types: ["ProductGroup"],
+    source: `${DOCS}product-variants`,
+    checked: "2026-11-25",
+    required: ["name"],
+    recommended: ["aggregateRating", "brand", "brand.name", "description", "hasVariant", "productGroupID", "review", "variesBy"],
+    properties: RATINGS,
+    sharedWithVariants: ["aggregateRating", "brand", "review"],
   },
   {
     feature: "Review snippet",

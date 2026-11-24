@@ -409,10 +409,65 @@ describe("Content-Security-Policy", () => {
     assert.equal(r.status, "passed");
   });
 
-  test("any other non-empty policy passes - strength beyond the two keywords isn't graded", () => {
-    const r = rule(analyzeHeaders(withHeaders({ "content-security-policy": "default-src *" })).rules, "Content-Security-Policy");
+  // CSP3 s6.1.10: with no script-src (or default-src), every policy "implicitly" allows scripts.
+  test("a policy with neither script-src nor default-src restricts no scripts -> warning, -5, saying why", () => {
+    for (const csp of ["frame-ancestors 'none'", "upgrade-insecure-requests; block-all-mixed-content", "img-src 'self'; style-src 'self'", "script-src-attr 'none'"]) {
+      const { score, rules } = analyzeHeaders(withHeaders({ "content-security-policy": csp, "x-frame-options": "DENY" }));
+      const r = rule(rules, "Content-Security-Policy");
+      assert.equal(r.id, "csp-unsafe", csp);
+      assert.equal(r.status, "warning", csp);
+      assert.equal(r.scoreImpact, 5, csp);
+      assert.equal(score, 95, csp);
+      assert.match(r.message, /^Present, but allows scripts from any site \(it has no script-src or default-src directive\) - /, csp);
+      assert.match(r.message, /only protects against XSS when script-src \(or default-src\) limits scripts/, csp);
+    }
+  });
+
+  // CSP3 s6.7.2.8-s6.7.2.10: "*", a scheme-source and a "*" host-part match any host.
+  test("script sources that match any host (*, https:, http:, https://*) -> warning, -5, naming them", () => {
+    for (const [csp, sources] of [
+      ["default-src *", "\\*"],
+      ["default-src 'self'; script-src 'self' https:", "https:"],
+      ["script-src http: 'self'", "http:"],
+      ["script-src https://*", "https://\\*"],
+      ["script-src https://*:443/js/", "https://\\*:443/js/"],
+      ["script-src-elem *; script-src 'self'", "\\*"],
+    ]) {
+      const r = rule(analyzeHeaders(withHeaders({ "content-security-policy": csp })).rules, "Content-Security-Policy");
+      assert.equal(r.id, "csp-unsafe", csp);
+      assert.equal(r.scoreImpact, 5, csp);
+      assert.match(r.message, new RegExp(`^Present, but allows scripts from any site \\(its script sources include ${sources}\\) - `), csp);
+    }
+  });
+
+  test("specific hosts, wildcard subdomains, 'none', 'self', nonces and hashes restrict scripts", () => {
+    for (const csp of ["script-src 'none'", "script-src", "default-src 'self'", "script-src https://*.example.com https://cdn.example.net", "script-src 'nonce-abc'", "script-src 'sha256-abc='", "script-src-elem 'self'"]) {
+      const r = rule(analyzeHeaders(withHeaders({ "content-security-policy": csp })).rules, "Content-Security-Policy");
+      assert.equal(r.id, "csp-ok", csp);
+      assert.match(r.message, /^Present, restricts where scripts load from, and has no 'unsafe-inline'\/'unsafe-eval' in effect\./, csp);
+    }
+  });
+
+  // CSP3 s8.2: with 'strict-dynamic', CSP3 browsers ignore host-source and scheme-source expressions.
+  test("https: beside 'strict-dynamic' (the Strict CSP fallback for old browsers) is not penalised", () => {
+    const r = rule(analyzeHeaders(withHeaders({ "content-security-policy": "script-src 'nonce-r4nd0m' 'strict-dynamic' https: 'unsafe-inline'; object-src 'none'; base-uri 'none'" })).rules, "Content-Security-Policy");
     assert.equal(r.id, "csp-ok");
-    assert.equal(r.status, "passed");
+  });
+
+  test("with several policies, scripts are restricted when any one policy restricts them", () => {
+    const restricted = rule(analyzeHeaders(withHeaders({ "content-security-policy": "script-src *, default-src 'self'" })).rules, "Content-Security-Policy");
+    assert.equal(restricted.status, "passed");
+    const open = rule(analyzeHeaders(withHeaders({ "content-security-policy": "script-src *, frame-ancestors 'none'" })).rules, "Content-Security-Policy");
+    assert.equal(open.status, "warning");
+    assert.match(open.message, /its script sources include \*/);
+  });
+
+  test("open script sources and unsafe keywords are reported together, for one -5 deduction", () => {
+    const { score, rules } = analyzeHeaders(withHeaders({ "content-security-policy": "default-src * 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'none'" }));
+    const r = rule(rules, "Content-Security-Policy");
+    assert.equal(r.scoreImpact, 5);
+    assert.equal(score, 95);
+    assert.match(r.message, /^Present, but allows scripts from any site \(its script sources include \*\), 'unsafe-inline' for scripts, event handlers and styles and 'unsafe-eval' - /);
   });
 
   test("Content-Security-Policy-Report-Only does not count as a CSP", () => {
@@ -576,9 +631,39 @@ describe("Clickjacking protection", () => {
     assert.equal(r.status, "failed");
   });
 
-  test("frame-ancestors value is not validated - a permissive '*' still passes", () => {
-    const r = rule(analyzeHeaders({ "content-security-policy": "frame-ancestors *" }).rules, "Clickjacking protection");
-    assert.equal(r.status, "passed");
+  // CSP3 s6.4.2: every ancestor must match the list, and "*", scheme-sources and a "*" host-part
+  // match any origin (s6.7.2.8-s6.7.2.10).
+  test("frame-ancestors that allows any origin -> failed, -10, naming the source", () => {
+    for (const [value, shown] of [["*", "\\*"], ["https:", "https:"], ["http:", "http:"], ["'self' *", "\\*"], ["'none' https://*", "https://\\*"]]) {
+      const { score, rules } = analyzeHeaders(withHeaders({ "content-security-policy": `default-src 'self'; frame-ancestors ${value}` }));
+      const r = rule(rules, "Clickjacking protection");
+      assert.equal(r.id, "clickjack-invalid", value);
+      assert.equal(r.status, "failed", value);
+      assert.equal(r.scoreImpact, 10, value);
+      assert.equal(score, 90, value);
+      assert.match(r.message, new RegExp(`^CSP frame-ancestors includes ${shown}, which lets any site embed this page`), value);
+      assert.match(r.message, /Use frame-ancestors 'none', 'self' or a list of specific origins\.$/, value);
+    }
+  });
+
+  // CSP3 s6.4.2.2 / HTML Standard: an enforced frame-ancestors makes browsers ignore X-Frame-Options.
+  test("a permissive frame-ancestors is not rescued by X-Frame-Options, which browsers then ignore", () => {
+    const r = clickjack("DENY", "default-src 'self'; frame-ancestors *");
+    assert.equal(r.id, "clickjack-invalid");
+    assert.match(r.message, /browsers ignore X-Frame-Options when frame-ancestors is present, so X-Frame-Options "DENY" has no effect\./);
+  });
+
+  test("'none', 'self', an empty list and specific origins (wildcard subdomains included) pass", () => {
+    for (const value of ["'none'", "'self'", "", "https://shop.example", "'self' https://*.example.com", "https://partner.example:8443"]) {
+      const r = rule(analyzeHeaders({ "content-security-policy": `frame-ancestors ${value}` }).rules, "Clickjacking protection");
+      assert.equal(r.id, "clickjack-ok", value);
+      assert.equal(r.message, "Covered by CSP's frame-ancestors directive.", value);
+    }
+  });
+
+  test("with several policies, one restricting frame-ancestors is enough", () => {
+    const r = rule(analyzeHeaders({ "content-security-policy": "frame-ancestors *, frame-ancestors 'self'" }).rules, "Clickjacking protection");
+    assert.equal(r.id, "clickjack-ok");
   });
 });
 

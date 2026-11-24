@@ -141,9 +141,9 @@ without reading it. The `User-Agent` names this package.
 | Check | Deduction | Passes when |
 |---|---|---|
 | Strict-Transport-Security | 15 if missing, 5 if `max-age` < 15768000 (6 months) | `max-age` is at least 6 months |
-| Content-Security-Policy | 15 if missing, 5 if `'unsafe-inline'` or `'unsafe-eval'` is in effect | a policy is present and neither keyword takes effect |
+| Content-Security-Policy | 15 if missing; 5 if it doesn't restrict scripts (no `script-src` or `default-src`, or one that allows any host with `*`, `https:` or `http:` and no `'strict-dynamic'`), or if `'unsafe-inline'` or `'unsafe-eval'` is in effect | a policy is present, restricts where scripts load from, and neither keyword takes effect |
 | X-Content-Type-Options | 5 | the first value is `nosniff` |
-| Clickjacking protection | 10 | CSP `frame-ancestors` is present, or X-Frame-Options is a value browsers honour |
+| Clickjacking protection | 10 | CSP `frame-ancestors` is `'none'`, `'self'` or specific origins (not `*`, `https:` or `http:`, which allow any site), or, with no `frame-ancestors`, X-Frame-Options is a value browsers honour |
 | Referrer-Policy | 2 (browsers already default to `strict-origin-when-cross-origin`) | present |
 | Permissions-Policy | 5 | present |
 | Server / X-Powered-By | 5 | neither header is sent |
@@ -154,9 +154,11 @@ The score is 100 minus the deductions. The lowest possible score is 43.
 
 - **A good score is not a security certification.** Headers are one layer. This tool can't see
   your application's code, dependencies, TLS configuration or cookies.
-- **CSP strength is only partly graded.** It flags `'unsafe-inline'` and `'unsafe-eval'` when
-  they actually take effect. Overly broad sources (`*`, `https:`, wide CDNs) aren't scored. For
-  a deeper CSP review, use Google's
+- **CSP strength is only partly graded.** It flags a policy that doesn't restrict scripts (no
+  `script-src` or `default-src`, or one allowing any host), and `'unsafe-inline'` and
+  `'unsafe-eval'` when they actually take effect, all within one 5-point deduction. Other broad
+  script sources (`data:`, wide CDNs such as `https://*.googleapis.com`) and other directives
+  (`object-src`, `base-uri`) aren't scored. For a deeper CSP review, use Google's
   [CSP Evaluator](https://csp-evaluator.withgoogle.com/).
 - **Values for Referrer-Policy and Permissions-Policy aren't graded.** Only whether they're
   present.

@@ -89,8 +89,9 @@ response at all exits 2, with a one-line message on stderr.
 Captured on 2026-11-24 from public stores, unedited. Sites change, so a run today will differ.
 
 A Shopify store. Its product page marks up the product's variants as a `ProductGroup`, which
-schemaview doesn't check, so the Product rich result is "not checked" rather than missing; its
-`hreflang="en-EU"` uses a region code Google ignores:
+schemaview didn't check yet when this was captured, so the Product rich result was "not
+checked" rather than missing (schemaview now checks the group and each variant, so a run today
+reports them); its `hreflang="en-EU"` uses a region code Google ignores:
 
 ```text
 $ npx store-check https://www.gymshark.com
@@ -332,10 +333,12 @@ summary line counts sections by status and adds up the findings.
 **Product rich result.** "Product snippet and Merchant listing valid" means `schemaview` matched
 a `Product` node on the product page to those features (Merchant listing needs `offers`) and the
 product page's structured data has no errors. An error anywhere in that page's JSON-LD is
-reported against it, because schemaview reports errors per page, not per feature. schemaview checks
-a top-level `Product` only: when the product page's markup is a `ProductGroup` (Shopify's
-markup for products with variants) or a nested `Product`, or uses Microdata or RDFa, the Product
-rich result is "not checked", and `product-markup-missing` is not reported.
+reported against it, because schemaview reports errors per page, not per feature. A
+`ProductGroup` (Shopify's markup for products with variants) is checked as "Product variants",
+and each of its variants as a Product snippet and Merchant listing. schemaview checks top-level
+products only: when the product page's `Product` or `ProductGroup` is nested in another node, or
+uses Microdata or RDFa, the Product rich result is "not checked", and `product-markup-missing`
+is not reported.
 
 ### store-check's own rules
 

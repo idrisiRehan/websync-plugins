@@ -2,7 +2,7 @@
 // (from the table in rich-results.ts) and value formats. Pure and offline.
 
 import { extractJsonLd } from "./extract.ts";
-import { childPath, idOf, index, propertyOf, SCHEMA_ORG_PREFIX, typesOf, valuesOf, type Graph } from "./graph.ts";
+import { childPath, idOf, index, propertyOf, SCHEMA_ORG_PREFIX, typesOf, valuesOf, variantGroups, type Graph } from "./graph.ts";
 import { parseJson, type JsonNode, type JsonObject } from "./json.ts";
 import { RICH_RESULT_TYPES, VALUE_FORMATS, type Shape, type ValueFormat } from "./rich-results.ts";
 
@@ -91,6 +91,10 @@ interface Context extends Graph {
   requiredValues: Set<JsonNode>;
   /** Missing properties per node, keyed by requirement, so two features share one finding. */
   missing: Map<JsonNode, Map<string, Missing>>;
+  /** A variant's group, and the properties the variant may take from it (sharedWithVariants). */
+  inherited: Map<JsonNode, { group: JsonObject; shared: readonly string[] }>;
+  /** Groups checked against an entry with sharedWithVariants. */
+  checkedGroups: Set<JsonNode>;
   entities: StructuredDataEntity[];
 }
 
@@ -102,6 +106,7 @@ interface Problem {
 }
 
 const SCHEMA_ORG = /^https?:\/\/schema\.org\/?$/;
+const WWW_SCHEMA_ORG = /^https?:\/\/www\.schema\.org\/?$/;
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:[.,]\d+)?)?(?:Z|[+-](\d{2})(?::?(\d{2}))?)?)?$/;
 const ISO_DURATION = /^P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+W)?(?:\d+D)?(?:T(?=\d)(?:\d+H)?(?:\d+M)?(?:\d+(?:[.,]\d+)?S)?)?$/;
 const PLAIN_NUMBER = /^\d+(?:\.\d+)?$/;
@@ -128,12 +133,12 @@ function sameValue(a: JsonNode, b: JsonNode): boolean {
   return b.kind === a.kind && "value" in b && b.value === a.value;
 }
 
-function isSchemaOrgContext(node: JsonNode): boolean {
-  if (node.kind === "string") return SCHEMA_ORG.test(node.value.trim());
-  if (node.kind === "array") return node.items.some(isSchemaOrgContext);
+function isSchemaOrgContext(node: JsonNode, pattern = SCHEMA_ORG): boolean {
+  if (node.kind === "string") return pattern.test(node.value.trim());
+  if (node.kind === "array") return node.items.some((item) => isSchemaOrgContext(item, pattern));
   if (node.kind === "object") {
     const vocab = node.props.get("@vocab");
-    return vocab?.kind === "string" && SCHEMA_ORG.test(vocab.value.trim());
+    return vocab?.kind === "string" && pattern.test(vocab.value.trim());
   }
   return false;
 }
@@ -146,9 +151,11 @@ function resolvePath(ctx: Context, node: JsonObject, segments: string[]): JsonNo
 
 function checkRequirement(ctx: Context, owner: JsonNode, node: JsonObject, path: string, requirement: string, level: Level, feature: string, listed: Set<string>): void {
   let allGated = true;
+  const from = ctx.inherited.get(node);
   for (const alternative of requirement.split("|")) {
     const segments = alternative.split(".");
-    const found = resolvePath(ctx, node, segments);
+    let found = resolvePath(ctx, node, segments);
+    if (!found.length && from?.shared.includes(segments[0])) found = resolvePath(ctx, from.group, segments);
     if (found.length) {
       if (level === "required") for (const value of found) ctx.requiredValues.add(value);
       return;
@@ -218,6 +225,7 @@ function checkRichResults(ctx: Context, node: JsonObject, types: string[], kind:
     }
     if (entry.appliesWhen && !valuesOf(ctx, node, entry.appliesWhen).length) continue;
     checkShape(ctx, node, entry, entry.feature, true);
+    if (entry.sharedWithVariants) ctx.checkedGroups.add(node);
     if (!matched.includes(entry.feature)) matched.push(entry.feature);
   }
   return matched;
@@ -225,7 +233,8 @@ function checkRichResults(ctx: Context, node: JsonObject, types: string[], kind:
 
 function childKind(kind: NodeKind, key: string): NodeKind {
   if (key === "@graph") return "root";
-  if ((kind === "root" || kind === "standalone") && key === "mainEntity") return "standalone";
+  // A ProductGroup's variants are products in their own right (Google's product variants docs).
+  if ((kind === "root" || kind === "standalone") && (key === "mainEntity" || key === "hasVariant")) return "standalone";
   if ((kind === "root" || kind === "standalone") && key === "itemListElement") return "listItem";
   if (kind === "listItem" && key === "item") return "standalone";
   return "nested";
@@ -263,7 +272,15 @@ function checkRoot(ctx: Context, root: JsonNode): void {
     const context = node.props.get("@context");
     if (!context) {
       ctx.report("context-missing", "error", 'No @context. Add "@context": "https://schema.org" so the types are read as schema.org.', node.line, path);
-    } else if (!isSchemaOrgContext(context)) {
+    } else if (isSchemaOrgContext(context)) {
+      // The documented forms.
+    } else if (isSchemaOrgContext(context, WWW_SCHEMA_ORG)) {
+      // www.schema.org serves the same JSON-LD context document as schema.org (@vocab
+      // http://schema.org/), so a JSON-LD processor reads the same types: a warning, not an
+      // error. But schema.org's FAQ names only "https://schema.org" and "http://schema.org", and
+      // Google's structured data documentation writes schema.org without www.
+      ctx.report("context-invalid", "warning", `@context ${show(context)} uses www.schema.org. That host serves the same JSON-LD context, but Google's documentation and schema.org only use schema.org without www ("https://schema.org" or "http://schema.org"), so Google and other tools may not read it as schema.org. Use "https://schema.org".`, context.line, childPath(path, "@context"));
+    } else {
       ctx.report("context-invalid", "error", `@context ${show(context)} isn't schema.org. Use "https://schema.org".`, context.line, childPath(path, "@context"));
     }
   }
@@ -403,6 +420,8 @@ export function validateStructuredData(input: string, options: ValidateOptions =
     ids: new Map(),
     requiredValues: new Set(),
     missing: new Map(),
+    inherited: new Map(),
+    checkedGroups: new Set(),
     entities: [],
   };
 
@@ -431,9 +450,18 @@ export function validateStructuredData(input: string, options: ValidateOptions =
 
   // All blocks are indexed first: an @id in one script can be referenced from another.
   for (const root of roots) index(ctx, root, "$");
+  for (const [variant, group] of variantGroups(ctx)) {
+    const types = typesOf(group) ?? [];
+    const shared = RICH_RESULT_TYPES.find((e) => e.sharedWithVariants && e.types.some((t) => types.includes(t)))?.sharedWithVariants;
+    if (shared) ctx.inherited.set(variant, { group, shared });
+  }
   for (const root of roots) checkRoot(ctx, root);
-  for (const m of [...ctx.missing.values()].flatMap((byRequirement) => [...byRequirement.values()])) {
+  for (const [owner, byRequirement] of ctx.missing) for (const m of byRequirement.values()) {
     const alternatives = m.requirement.split("|");
+    // A recommended property that variants may take from their group is recommended on the
+    // checked group as well, so it is reported there once instead of on every variant too.
+    const from = ctx.inherited.get(owner);
+    if (m.level === "recommended" && from && ctx.checkedGroups.has(from.group) && alternatives.every((a) => from.shared.includes(a.split(".")[0]))) continue;
     const what = alternatives.length === 1 ? `"${m.requirement}"` : `one of ${joinList(alternatives.map((a) => `"${a}"`), "or")}`;
     const path = missingPath(m.path, alternatives);
     const required = m.level === "required";
