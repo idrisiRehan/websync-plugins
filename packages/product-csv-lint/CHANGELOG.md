@@ -20,3 +20,5 @@ All notable changes to `product-csv-lint` are recorded here. The format follows
   including barcode check digits through `websync-validators`.
 - `product-csv-lint` CLI with platform detection, `--json`, `--max-warnings` and a 50 MB read
   cap enforced while reading.
+- `parseCsv()`, the CSV reader with row numbers and quote checks, exported as a building block.
+  It also splits on tabs (used by `product-feed-lint`).

@@ -17,3 +17,4 @@ All notable changes to `sitemap-lint` are recorded here. The format follows
 - A strict built-in XML reader: no dependencies, no DTD processing (XXE-safe), line numbers.
 - `sitemap-lint` CLI for files, stdin and URLs, with gzip support, a 50 MB read cap,
   `--json`, `--max-warnings` and `--timeout`.
+- `parseXml()`, the XML reader, exported as a building block (used by `product-feed-lint`).

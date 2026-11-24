@@ -110,6 +110,17 @@ for (const f of result.findings) {
 }
 ```
 
+The XML reader is exported too. It checks well-formedness, resolves namespaces, records a line
+for every element and never processes a DTD:
+
+```ts
+import { parseXml } from "sitemap-lint";
+
+const parsed = parseXml(xmlText);
+if (parsed.ok) parsed.root; // { name, localName, namespace, attributes, children, text, line }
+else parsed.error;          // with parsed.line
+```
+
 ## Rules
 
 | Rule | Severity | Meaning |

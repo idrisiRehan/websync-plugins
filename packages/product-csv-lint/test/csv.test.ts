@@ -15,6 +15,21 @@ describe("parseCsv", () => {
     assert.deepEqual(cells('a,b\n"x, y","line1\nline2"\n"say ""hi""",z'), [["a", "b"], ["x, y", "line1\nline2"], ['say "hi"', "z"]]);
   });
 
+  test("splits on tabs when asked, keeping commas and semicolons in fields", () => {
+    const tsv = ["id", "title"].join(String.fromCharCode(9)) + "\n" + ["1", "a, b; c"].join(String.fromCharCode(9));
+    assert.deepEqual(parseCsv(tsv, "\t").records.map((r) => r.cells), [["id", "title"], ["1", "a, b; c"]]);
+  });
+
+  test("many stray quotes stay linear", () => {
+    const text = `title
+${`TV 55" screen
+`.repeat(80_000)}`;
+    const started = performance.now();
+    const { issues } = parseCsv(text, ",");
+    assert.equal(issues.length, 80_000);
+    assert.ok(performance.now() - started < 2000);
+  });
+
   test("row numbers follow records, so a multi-line cell takes one row", () => {
     const { records } = parseCsv('h\n"a\nb"\nc', ",");
     assert.deepEqual(records.map((r) => r.row), [1, 2, 3]);

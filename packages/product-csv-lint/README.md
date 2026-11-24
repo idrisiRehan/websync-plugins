@@ -88,6 +88,16 @@ result.findings;      // [{ rule, severity, row, column, message, value }]
 `row` is the spreadsheet row number: the header is row 1, and a cell that spans several lines
 still counts as one row.
 
+The CSV reader is exported too, for tools that need the same row numbers and quote checks:
+
+```ts
+import { parseCsv } from "product-csv-lint";
+
+const { records, issues } = parseCsv(text, ","); // "," | ";" | "\t"
+records; // [{ cells: string[], row }]
+issues;  // [{ kind: "quote-unexpected" | "quote-unterminated", row }]
+```
+
 ## Rules
 
 Severities: **error** means the import will fail or produce wrong data. **warning** means it

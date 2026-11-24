@@ -36,7 +36,7 @@ export function detectDelimiter(text: string): "," | ";" {
  * (`12" pizza`) or text after a closing quote (`"a"b`) is kept literally and reported, since
  * strict importers reject it. Blank lines are skipped but still counted.
  */
-export function parseCsv(text: string, delimiter: "," | ";"): ParsedCsv {
+export function parseCsv(text: string, delimiter: "," | ";" | "\t"): ParsedCsv {
   const records: CsvRecord[] = [];
   const issues: CsvIssue[] = [];
   let cells: string[] = [];
@@ -45,8 +45,13 @@ export function parseCsv(text: string, delimiter: "," | ";"): ParsedCsv {
   let quoted = false; // the current field started with a quote
   let row = 1;
   let quoteRow = 1;
+  // One issue per kind and row. A set keeps this linear when many cells hold stray quotes.
+  const reported = new Set<string>();
   const report = (kind: CsvIssue["kind"], at: number) => {
-    if (!issues.some((i) => i.kind === kind && i.row === at)) issues.push({ kind, row: at });
+    const key = `${kind} ${at}`;
+    if (reported.has(key)) return;
+    reported.add(key);
+    issues.push({ kind, row: at });
   };
   const endRecord = () => {
     cells.push(field);
