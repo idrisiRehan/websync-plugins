@@ -1,0 +1,5 @@
+Title,URL handle,Option1 name,Option1 value,SKU,Price,Compare-at price,Barcode,Product image URL,Image position,Status
+Classic Tee,classic-tee,Size,S,TEE-S,20.00,25.00,4006381333931,https://cdn.example.com/tee-1.jpg,1,active
+,classic-tee,Size,M,TEE-M,20.00,,4006381333930,,,
+,classic-tee,Size,M,TEE-L,20.00,,,,,
+12" Pizza Stone,pizza-stone,Title,Default Title,TEE-S,$34.99,,,https://cdn.example.com/stone.jpg,1,live

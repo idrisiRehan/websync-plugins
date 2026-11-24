@@ -87,6 +87,7 @@ directory. These are reconciled as follows, and this audit recommends it:
 | Security Header Checker | Flags a version-less `Server` header (for example `Server: hcdn`, which websync.in sends) with a message about revealing the version. Mozilla's Observatory doesn't penalise `Server` at all. Proposed for 1.1 of both the package and the tool (ROADMAP R-4). | this audit, live run |
 | websync.in itself | `Strict-Transport-Security: max-age=300`: stage 1 of the planned HSTS rollout (site backlog T1) is still live. `security-header-audit` scores the site 85 and warns on it. | live CLI run, 24 Nov 2026 |
 | Sitemap Validator | No unit tests for its rules. | `features/sitemap-validator/lib/` |
+| Product CSV Validator (Shopify) | Knows only Shopify's legacy column names. A file in Shopify's current format (`URL handle`, `Price` ...) gets "Required column Handle is missing", and its `Price` values aren't checked at all. Extra-image rows (only handle and image URL) are reported as duplicate variants and counted as variants. Both reproduced against the site's code on 24 Nov 2026; fixed in `product-csv-lint`. | scratch reproduction, WORKLOG |
 | SEO Analyzer | Parsing and grading live inside the React component, so they can't be tested or reused. | `features/seo-analyzer/components/SeoAnalyzer.tsx` |
 | UTM Builder | Encoding mismatch already logged as site backlog BUG7. | `docs/backlog.md` |
 

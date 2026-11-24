@@ -13,6 +13,7 @@ the chosen names is a known product or mark.
 | `websync-validators` | npm | **Published** (1.0.0) | owned | Kept. Renaming a published package would strand existing users. |
 | `security-header-audit` | npm | Available (404) | `npm view` | Descriptive. It matches how people search ("security header audit/check"). Nearby: `security-headers` (12 a week, 2022) is a different, abandoned package. |
 | `sitemap-lint` | npm | Available (404) | `npm view` | Built (1.0.0 ready). Owner confirmed the name 2026-11-24. |
+| `product-csv-lint` | npm | Available (404) | `npm view` | Built (1.0.0 ready). Nearby names `shopify-csv-validator`, `woocommerce-csv-validator`, `product-csv-validator` are also free; none exists. |
 | `websync-plugins` | GitHub repo | **Confirmed by owner** (2026-11-24) | not checked (no GitHub access) | Matches this folder. |
 
 ### Why descriptive names, not `websync-*`, for new packages

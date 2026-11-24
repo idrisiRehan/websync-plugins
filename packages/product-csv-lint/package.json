@@ -1,0 +1,63 @@
+{
+  "name": "product-csv-lint",
+  "version": "1.0.0",
+  "description": "Check Shopify and WooCommerce product CSVs before import: quoting, encoding, headers (current and legacy Shopify names), prices, barcodes, variants and parents, with spreadsheet row numbers. Offline, plus a CLI.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "product-csv-lint": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --conditions=websync-source --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "shopify",
+    "woocommerce",
+    "csv",
+    "product-csv",
+    "product-import",
+    "ecommerce",
+    "catalog",
+    "validator",
+    "lint",
+    "linter",
+    "gtin",
+    "sku",
+    "cli"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://websync.in/tools/product-csv-validator/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/product-csv-lint"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  },
+  "dependencies": {
+    "websync-validators": "^1.1.0"
+  }
+}

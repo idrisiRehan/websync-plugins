@@ -10,6 +10,7 @@ body:
         - websync-validators
         - security-header-audit
         - sitemap-lint
+        - product-csv-lint
     validations:
       required: true
   - type: input

@@ -25,7 +25,8 @@ TypeScript sources directly.
   examples from those sources where they exist.
 - **Tests come with every change.** Cover the malformed and edge-case inputs, not only the happy
   path. A bug fix starts with a test that fails.
-- **No dependencies** in published packages unless an ADR in `docs/adr/` justifies one.
+- **No third-party dependencies** in published packages unless an ADR in `docs/adr/` justifies
+  one. Packages from this repository may depend on each other (ADR 0003).
 - **Library code is pure.** No network, filesystem or environment access outside a package's
   CLI entry point.
 - **Keep it simple.** No abstraction until a second real use needs it, and no dead code.

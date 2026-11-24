@@ -2,6 +2,36 @@
 
 Newest first. Decisions, milestones, discoveries and problems.
 
+## 2026-11-24 (evening): product-csv-lint 1.0.0 (R-10)
+
+Owner: push tomorrow; today is for building plugins. Picked product-csv-lint next (matrix
+6.65, the highest unbuilt score).
+
+- **Verified Shopify's spec first** (agent read help.shopify.com product CSV page,
+  2026-11-24). Shopify's current format renamed most columns (`URL handle`, `Price`,
+  `Product image URL`, `Continue selling when out of stock`, `Weight unit for display`
+  ...). Title is the only required column. The page states no file-size limit, so none is
+  enforced. Both current and legacy names are accepted, case-insensitively.
+- **One shared core** (`core.ts`) for decoding, CSV structure, headers, typed values and
+  duplicates. `shopify.ts` and `woocommerce.ts` hold column data plus only their own
+  checks. The site had two engines that repeated all of that.
+- **New checks:** unexpected quote (the `12" pizza` case, with the exact fix), unterminated
+  quote, semicolon delimiter (error for Shopify, warning for WooCommerce), invalid UTF-8,
+  barcode check digits on WooCommerce's GTIN column, and Shopify Status, inventory policy and
+  gift card values.
+- **Bugs found in the site's Shopify validator, reproduced against its code** (site not
+  changed, recorded in AUDIT.md 3.3): (1) a current-format file gets "Required column Handle
+  is missing" and its prices go unchecked; (2) extra-image rows are reported as duplicate
+  variants and counted as variants; (3) option values were joined with no separator, so
+  `x|yz` and `xy|z` collided. All three are fixed here and covered by tests.
+- Row numbers stay spreadsheet rows when blank lines and multi-line cells are present (the
+  site numbered by parsed index).
+- **Internal dependency** on websync-validators for barcodes, resolved from source in
+  development through the `websync-source` export condition (ADR 0003). It builds, tests
+  and typechecks with no `dist/` present.
+- Verification: 75 tests. Clean-state `npm run check` with 562 tests passing. Packed both
+  tarballs and installed them together in a clean project: library and CLI work.
+
 ## 2026-11-24 (later): scope decision, sitemap-lint 1.0.0 (R-7)
 
 ### Owner decisions

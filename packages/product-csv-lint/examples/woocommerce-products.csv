@@ -1,0 +1,5 @@
+ID,Type,SKU,Name,Parent,Regular price,Sale price,Attribute 1 name,Attribute 1 value(s),Images
+10,variable,TEE,Classic Tee,,,,Size,"S, M",https://cdn.example.com/tee.jpg
+11,variation,TEE-S,,TEE,20,25,Size,S,
+12,variation,TEE-M,,MUG,20,,Size,M,
+13,simple,MUG,Mug,,12.50,,,,https://cdn.example.com/mug-1.jpg|https://cdn.example.com/mug-2.jpg
