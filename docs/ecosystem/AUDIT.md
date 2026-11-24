@@ -55,6 +55,10 @@ regex, mock servers, JSON-LD validation, content extraction, an MCP server.
 
 ## 3. Findings
 
+> **Owner decision, 24 November 2026:** the website is out of scope and stays unchanged.
+> Findings about the site (3.1 and 3.3) are kept for reference only. Packages are built and
+> released independently.
+
 ### 3.1 Validator logic is duplicated (DRY)
 
 The site carries its own copies of the code published as `websync-validators`.

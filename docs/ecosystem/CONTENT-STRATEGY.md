@@ -1,5 +1,9 @@
 # Content and distribution strategy
 
+> **Scope (24 November 2026):** the website is not changed in this initiative, so the site
+> page and guide items below are suggestions for later, not planned work. Package READMEs
+> are the documentation.
+
 Content exists to explain software that already works. Each item below is tied to a shipped
 package and must match its actual behaviour. Verify claims against the source and tests before
 publishing. No invented benchmarks, adoption numbers, testimonials or comparisons.

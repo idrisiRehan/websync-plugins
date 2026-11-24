@@ -1,0 +1,58 @@
+{
+  "name": "sitemap-lint",
+  "version": "1.0.0",
+  "description": "Lint XML sitemaps and sitemap indexes against the sitemaps.org protocol, with line numbers. Zero dependencies, no DTD processing (XXE-safe), plus a CLI that reads files, URLs and .xml.gz.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "sitemap-lint": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "sitemap",
+    "sitemap.xml",
+    "sitemap-index",
+    "sitemaps",
+    "xml-sitemap",
+    "validator",
+    "lint",
+    "linter",
+    "seo",
+    "technical-seo",
+    "cli"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://websync.in/tools/sitemap-validator/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/sitemap-lint"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  }
+}

@@ -2,6 +2,32 @@
 
 Newest first. Decisions, milestones, discoveries and problems.
 
+## 2026-11-24 (later): scope decision, sitemap-lint 1.0.0 (R-7)
+
+### Owner decisions
+
+- GitHub repository name confirmed: `idrisiRehan/websync-plugins`.
+- **The WebSync website stays unchanged.** This initiative builds the plugin packages only.
+  R-2, R-5 and R-6 are dropped. Site findings stay in AUDIT.md for reference.
+
+### Done
+
+- **sitemap-lint 1.0.0.** 23 rules from the sitemaps.org protocol, each finding with a rule
+  id, line and entry number. A built-in strict XML reader (ADR 0002): no dependencies, no
+  DTD processing. CLI for files, stdin and URLs, with gzip support and a 50 MB read cap on
+  both downloads and decompression.
+- Improvements on the site's Sitemap Validator rules: every W3C Datetime form is accepted
+  (the site rejected `YYYY`, `YYYY-MM` and `hh:mm` times) and impossible dates are rejected.
+  Added: `loc-too-long` (2,048 characters), `loc-unescaped`, unknown and repeated elements,
+  `entry-wrong-type`, encoding checks, and a stricter priority format (the site used
+  `Number()`, which accepts `0x1` and `1e-1`). A non-http `<loc>` is now an error.
+- Verification: 83 tests. A scratch fuzz run of 20,000 mutated sitemaps against fast-xml-parser
+  found 0 cases where the reader was more lenient; all 1,332 disagreements were correct
+  rejections (see ADR 0002). Live runs on websync.in (217 entries), sitemaps.org and MDN's
+  index and gzipped en-US sitemap (it found a real duplicate URL there). Clean install of the
+  packed tarball (26 files, 30.4 kB).
+- `npm run check`: 487 tests pass.
+
 ## 2026-11-24 (later): websync-validators 1.1.0 (R-3)
 
 - Added GTIN (8/12/13/14, conversion, packaging indicator) and ISBN (10/13, conversion). The

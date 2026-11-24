@@ -9,6 +9,7 @@ body:
       options:
         - websync-validators
         - security-header-audit
+        - sitemap-lint
     validations:
       required: true
   - type: textarea
