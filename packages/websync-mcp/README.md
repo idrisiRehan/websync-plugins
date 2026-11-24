@@ -1,7 +1,7 @@
 # websync-mcp
 
 A local [Model Context Protocol](https://modelcontextprotocol.io) server that gives AI
-assistants (Claude Code, Claude Desktop, Cursor and any other MCP client) seven offline checks
+assistants (Claude Code, Claude Desktop, Cursor and any other MCP client) nine offline checks
 from WebSync:
 
 | Tool | What it does |
@@ -13,6 +13,8 @@ from WebSync:
 | `lint_page_metadata` | Lints a page's HTML for search and sharing metadata: title, description, canonical, robots, Open Graph, X cards, headings, hreflang. Returns the extracted metadata too. |
 | `validate_structured_data` | Validates JSON-LD against the properties Google documents for rich results (Product, Article, Breadcrumb, Event, Recipe and more), with line numbers. |
 | `lint_llms_txt` | Lints an `llms.txt` file against the llmstxt.org proposal. |
+| `lint_robots_txt` | Lints a robots.txt file against RFC 9309 and Google's rules, reports which AI crawlers may crawl the site, and tests a URL against the rules. |
+| `lint_product_feed` | Lints a product feed for Google Merchant Center (TSV, RSS, Atom) or OpenAI's product feed spec for ChatGPT shopping (JSONL, CSV, TSV), with row or line numbers, item ids and attributes. |
 
 **No network access.** Every tool works only on the text the assistant passes in. The server
 never fetches URLs, reads or writes files, or opens sockets. To check a live site, the
@@ -22,8 +24,9 @@ leaves no SSRF surface and no way to make the server reach your internal network
 Each tool is a thin adapter over a published package:
 [`websync-validators`](https://www.npmjs.com/package/websync-validators), [`security-header-audit`](https://www.npmjs.com/package/security-header-audit),
 [`sitemap-lint`](https://www.npmjs.com/package/sitemap-lint), [`product-csv-lint`](https://www.npmjs.com/package/product-csv-lint),
-[`metacheck`](https://www.npmjs.com/package/metacheck), [`schemaview`](https://www.npmjs.com/package/schemaview) and
-[`llms-txt-kit`](https://www.npmjs.com/package/llms-txt-kit). The server
+[`metacheck`](https://www.npmjs.com/package/metacheck), [`schemaview`](https://www.npmjs.com/package/schemaview),
+[`llms-txt-kit`](https://www.npmjs.com/package/llms-txt-kit), [`robots-txt-lint`](https://www.npmjs.com/package/robots-txt-lint) and
+[`product-feed-lint`](https://www.npmjs.com/package/product-feed-lint). The server
 itself has no other dependencies.
 
 ## Set up
@@ -75,6 +78,8 @@ closed-world.
 | `lint_page_metadata` | `html`: up to 10 MB. `url` (optional): the page's absolute URL | `valid`, counts, `findings`, `metadata` |
 | `validate_structured_data` | `input`: HTML or JSON-LD, up to 10 MB. `url` (optional) | `valid`, `format`, counts, `findings`, `entities` (first 200), `entityCount` |
 | `lint_llms_txt` | `text`: up to 10 MB. `url` (optional): where the file is served | `valid`, counts, `findings`, `outline` (title, summary, sections with link counts) |
+| `lint_robots_txt` | `text`: up to 1 MB. `url` (optional): where the file is served. `test_url` (optional): a URL or path to test. `user_agent` (optional, with `test_url`): a product token, default `*` | `valid`, counts, `findings`, `groupCount`, `sitemaps`, `aiCrawlers` (token, operator, purpose, access), and `access` (allowed, the deciding rule) when `test_url` is given |
+| `lint_product_feed` | `feed`: up to 50 MB. `target` (optional): `google` (default) or `openai`. `format` (optional): `tsv`, `csv`, `xml` or `jsonl` | `valid`, `target`, `format`, `itemCount`, counts, `findings` |
 
 Finding lists are capped at 200 entries, so a large file doesn't flood the assistant's context.
 `findingsOmitted` says how many were left out, and the error and warning counts always cover

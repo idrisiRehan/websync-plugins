@@ -27,13 +27,15 @@ describe("official SDK client over stdio", () => {
     assert.match(client.getInstructions() ?? "", /never fetches URLs/);
   });
 
-  test("lists the seven tools", async () => {
+  test("lists the nine tools", async () => {
     const { tools } = await client.listTools();
     assert.deepEqual(tools.map((t) => t.name).sort(), [
       "grade_security_headers",
       "lint_llms_txt",
       "lint_page_metadata",
       "lint_product_csv",
+      "lint_product_feed",
+      "lint_robots_txt",
       "lint_sitemap",
       "validate_identifier",
       "validate_structured_data",
@@ -76,6 +78,16 @@ describe("official SDK client over stdio", () => {
   test("calls lint_llms_txt", async () => {
     const result = await client.callTool({ name: "lint_llms_txt", arguments: { text: "# Site" } });
     assert.equal((result.structuredContent as { valid: boolean }).valid, true);
+  });
+
+  test("calls lint_robots_txt", async () => {
+    const result = await client.callTool({ name: "lint_robots_txt", arguments: { text: "User-agent: *\nDisallow:" } });
+    assert.equal((result.structuredContent as { valid: boolean }).valid, true);
+  });
+
+  test("calls lint_product_feed", async () => {
+    const result = await client.callTool({ name: "lint_product_feed", arguments: { feed: '{"item_id":"A1"}', target: "openai" } });
+    assert.equal((result.structuredContent as { target: string }).target, "openai");
   });
 
   test("bad arguments come back as a tool error, not a protocol error", async () => {

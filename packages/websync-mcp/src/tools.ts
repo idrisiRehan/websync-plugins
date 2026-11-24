@@ -4,6 +4,8 @@
 
 import { lintLlmsTxt } from "llms-txt-kit";
 import { lintMetadata } from "metacheck";
+import { lintProductFeed, type FeedFormat, type TargetName } from "product-feed-lint";
+import { aiCrawlerReport, isAllowed, lintRobotsTxt } from "robots-txt-lint";
 import { analyzeHeaders, parseRawHeaders } from "security-header-audit";
 import { lintProductCsv, detectPlatform, type Platform } from "product-csv-lint";
 import { validateStructuredData } from "schemaview";
@@ -39,6 +41,16 @@ const PAGE_URL = {
   maxLength: MAX_URL,
   description: "The absolute http(s) URL the content is served from. Used only to resolve relative URLs and compare them; it is not fetched.",
 } as const;
+
+/** Runs a library call, turning its TypeError for a bad argument into a fixable tool error. */
+function withInputErrors<T>(run: () => T): T {
+  try {
+    return run();
+  } catch (error) {
+    if (error instanceof TypeError) throw new ToolInputError(error.message);
+    throw error;
+  }
+}
 
 /** Validates an optional page URL argument, so a bad one comes back as a fixable tool error. */
 function pageUrl(url: string | undefined): { url?: string } {
@@ -204,6 +216,50 @@ export const TOOLS: Tool[] = [
       const sections = doc.sections.map(({ title, optional, links }) => ({ title, optional, linkCount: links.length }));
       return { ...capFindings(result), outline: { title: doc.title, summary: doc.summary ?? null, sections } };
     },
+  },
+  {
+    name: "lint_robots_txt",
+    title: "Lint a robots.txt file and check crawler access",
+    description:
+      "Checks a robots.txt file against RFC 9309 and how Google reads it: invalid lines, misspelled or ignored directives (crawl-delay, noindex), rules outside a group, paths that can never match, bad sitemap URLs, a site-wide Disallow and blocked CSS or JS. Also reports which AI crawlers (GPTBot, ClaudeBot, Google-Extended, PerplexityBot and others) may crawl the site, and, when test_url is given, whether user_agent may fetch it and which rule decided. Pass the file's text, not a URL. " +
+      READ_ONLY_NOTE,
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", maxLength: 1024 * 1024, description: "The robots.txt content." },
+        url: { ...PAGE_URL, description: "Where the file is served, such as https://example.com/robots.txt. Checked to be /robots.txt at a host root; it is not fetched." },
+        test_url: { type: "string", maxLength: MAX_URL, description: "An absolute URL or a path starting with / to test against the rules." },
+        user_agent: { type: "string", maxLength: 256, description: "Crawler product token for test_url, such as Googlebot or GPTBot. Default * (any crawler without its own group)." },
+      },
+      required: ["text"],
+      additionalProperties: false,
+    },
+    run: ({ text, url, test_url, user_agent }) => {
+      if (user_agent !== undefined && test_url === undefined) throw new ToolInputError('"user_agent" only applies with "test_url".');
+      const { groups, sitemaps, ...result } = lintRobotsTxt(text, pageUrl(url));
+      const aiCrawlers = aiCrawlerReport({ groups }).map(({ token, operator, purpose, access }) => ({ token, operator, purpose, access }));
+      const access = test_url === undefined ? undefined : withInputErrors(() => isAllowed({ groups }, user_agent ?? "*", test_url));
+      return { ...capFindings(result), groupCount: groups.length, sitemaps: sitemaps.slice(0, MAX_FINDINGS).map((s) => s.url), aiCrawlers, ...(access && { access }) };
+    },
+  },
+  {
+    name: "lint_product_feed",
+    title: "Lint a product feed for Google Merchant Center or ChatGPT shopping",
+    description:
+      "Checks a product feed before upload, against Google Merchant Center's product data specification (tab-separated text, RSS 2.0 or Atom XML) or OpenAI's product feed spec for ChatGPT shopping (JSONL, CSV or TSV): required and conditionally required attributes, duplicate ids, lengths, prices and currencies, sale prices, availability and condition values, dates, URLs, GTIN check digits and variant consistency. Each finding has a rule id, line or spreadsheet row, item id and attribute. Passing doesn't guarantee approval: landing pages, images and policies are checked by the platform. " +
+      READ_ONLY_NOTE,
+    inputSchema: {
+      type: "object",
+      properties: {
+        feed: { type: "string", maxLength: MAX_DOCUMENT, description: "The feed text." },
+        target: { type: "string", enum: ["google", "openai"], description: "Whose specification to check against. Default google." },
+        format: { type: "string", enum: ["tsv", "csv", "xml", "jsonl"], description: "The feed format. Omit to detect it." },
+      },
+      required: ["feed"],
+      additionalProperties: false,
+    },
+    run: ({ feed, target, format }) =>
+      capFindings(withInputErrors(() => lintProductFeed(feed, { target: target as TargetName | undefined, format: format as FeedFormat | undefined }))),
   },
 ];
 

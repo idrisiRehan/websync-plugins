@@ -10,9 +10,9 @@ All notable changes to `websync-mcp` are recorded here. The format follows
 
 ### Added
 
-- stdio MCP server with seven read-only, offline tools: `validate_identifier`,
+- stdio MCP server with nine read-only, offline tools: `validate_identifier`,
   `grade_security_headers`, `lint_sitemap`, `lint_product_csv`, `lint_page_metadata`,
-  `validate_structured_data` and `lint_llms_txt`.
+  `validate_structured_data`, `lint_llms_txt`, `lint_robots_txt` and `lint_product_feed`.
 - Protocol versions 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05. Input validation
   returns errors as tool results. Results carry both `structuredContent` and text. Finding
   lists are capped at 200 entries.

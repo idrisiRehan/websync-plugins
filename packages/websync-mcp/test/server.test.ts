@@ -74,7 +74,7 @@ describe("JSON-RPC errors", () => {
 });
 
 describe("tools/list", () => {
-  test("lists seven read-only tools with strict input schemas", () => {
+  test("lists nine read-only tools with strict input schemas", () => {
     const { tools } = request("tools/list").result as { tools: Record<string, any>[] };
     assert.deepEqual(tools.map((t) => t.name), [
       "validate_identifier",
@@ -84,6 +84,8 @@ describe("tools/list", () => {
       "lint_page_metadata",
       "validate_structured_data",
       "lint_llms_txt",
+      "lint_robots_txt",
+      "lint_product_feed",
     ]);
     for (const tool of tools) {
       assert.equal(tool.inputSchema.type, "object");
@@ -170,6 +172,43 @@ describe("tools/call", () => {
     assert.equal(data.doc, undefined);
   });
 
+  test("lint_robots_txt reports findings, AI crawler access and a URL decision", () => {
+    const text = `User-agent: *
+Disallow: /checkout/
+Crawl-delay: 5
+
+User-agent: GPTBot
+Disallow: /
+
+Sitemap: https://e.com/sitemap.xml
+`;
+    const data = callTool("lint_robots_txt", { text, test_url: "https://e.com/checkout/pay", user_agent: "Googlebot" }).structuredContent!;
+    assert.deepEqual((data.findings as { rule: string }[]).map((f) => f.rule), ["directive-unsupported"]);
+    assert.deepEqual(data.sitemaps, ["https://e.com/sitemap.xml"]);
+    assert.equal(data.groupCount, 2);
+    const crawlers = data.aiCrawlers as { token: string; access: string }[];
+    assert.equal(crawlers.find((c) => c.token === "GPTBot")?.access, "blocked");
+    assert.equal(crawlers.find((c) => c.token === "ClaudeBot")?.access, "partial");
+    assert.equal((data.access as { allowed: boolean }).allowed, false);
+    assert.equal(callTool("lint_robots_txt", { text }).structuredContent!.access, undefined);
+  });
+
+  test("lint_product_feed checks Google and OpenAI feeds", () => {
+    const xml = `<?xml version="1.0"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel><title>s</title><link>https://e.com</link><description>d</description>
+<item><g:id>A1</g:id><g:title>Mug</g:title><g:description>A mug.</g:description><g:link>https://e.com/a1</g:link><g:image_link>https://e.com/a1.jpg</g:image_link><g:availability>in_stock</g:availability><g:price>0 USD</g:price><g:condition>new</g:condition><g:brand>Acme</g:brand><g:gtin>4006381333931</g:gtin></item>
+</channel></rss>`;
+    const google = callTool("lint_product_feed", { feed: xml }).structuredContent!;
+    assert.equal(google.target, "google");
+    assert.equal(google.format, "xml");
+    assert.equal(google.itemCount, 1);
+    assert.ok((google.findings as { rule: string }[]).some((f) => f.rule === "price-zero"));
+    const openai = callTool("lint_product_feed", { feed: '{"item_id":"A1"}', target: "openai" }).structuredContent!;
+    assert.equal(openai.format, "jsonl");
+    assert.equal(openai.valid, false);
+    assert.ok((openai.findings as { rule: string }[]).some((f) => f.rule === "attribute-missing"));
+  });
+
   test("long finding lists are capped at 200", () => {
     const rows = Array.from({ length: 300 }, (_, i) => `Tee ${i},tee-${i},$${i}`).join("\n");
     const data = callTool("lint_product_csv", { csv: `Title,URL handle,Price\n${rows}` }).structuredContent!;
@@ -191,6 +230,11 @@ describe("tool input errors come back as tool results the model can act on", () 
     ["lint_product_csv", { csv: "name,email\na,b" }, /Pass platform/],
     ["lint_page_metadata", { html: "<title>x</title>", url: "/relative" }, /must be an absolute http/],
     ["lint_llms_txt", { text: "# x", url: "ftp://e.com/" }, /must be an absolute http/],
+    ["lint_robots_txt", { text: "User-agent: *", test_url: "relative/path" }, /absolute URL or a path starting with/],
+    ["lint_robots_txt", { text: "User-agent: *", test_url: "/a", user_agent: "Googlebot/2.1" }, /product token/],
+    ["lint_robots_txt", { text: "User-agent: *", user_agent: "Googlebot" }, /only applies with "test_url"/],
+    ["lint_product_feed", { feed: "{}", target: "openai", format: "xml" }, /must be one of/],
+    ["lint_product_feed", { feed: "x", target: "bing" }, /must be one of: google, openai/],
   ];
   for (const [name, args, pattern] of cases) {
     test(`${name} ${JSON.stringify(args).slice(0, 50)}`, () => {
