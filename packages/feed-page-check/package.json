@@ -1,0 +1,66 @@
+{
+  "name": "feed-page-check",
+  "version": "1.0.0",
+  "description": "Find products whose feed price, sale price or availability differs from what their own product page says: the mismatches Google Merchant Center disapproves items for, and that give AI shopping agents a different price than the page. Library plus CLI.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "websync-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "feed-page-check": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --conditions=websync-source --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "product-feed",
+    "google-merchant-center",
+    "merchant-center",
+    "google-shopping",
+    "chatgpt",
+    "agentic-commerce",
+    "price-mismatch",
+    "availability",
+    "structured-data",
+    "json-ld",
+    "schema.org",
+    "ecommerce",
+    "cli"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://github.com/idrisiRehan/websync-plugins/tree/main/packages/feed-page-check#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/feed-page-check"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  },
+  "dependencies": {
+    "product-feed-lint": "^1.0.0",
+    "redirect-inspector": "^1.0.0",
+    "schemaview": "^1.0.0"
+  }
+}

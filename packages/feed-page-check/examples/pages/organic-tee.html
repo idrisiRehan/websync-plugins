@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Organic cotton tee | WebSync Demo</title>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProductGroup",
+  "name": "Organic cotton tee",
+  "productGroupID": "TEE-ORG",
+  "variesBy": ["https://schema.org/size"],
+  "brand": { "@type": "Brand", "name": "WebSync Demo" },
+  "hasVariant": [
+    {
+      "@type": "Product",
+      "name": "Organic cotton tee, small",
+      "sku": "TEE-ORG-S",
+      "size": "S",
+      "offers": {
+        "@type": "Offer",
+        "url": "http://127.0.0.1:8080/products/organic-tee?size=s",
+        "price": 25,
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    },
+    {
+      "@type": "Product",
+      "name": "Organic cotton tee, medium",
+      "sku": "TEE-ORG-M",
+      "size": "M",
+      "offers": {
+        "@type": "Offer",
+        "url": "http://127.0.0.1:8080/products/organic-tee?size=m",
+        "price": 25,
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/OutOfStock"
+      }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<h1>Organic cotton tee</h1>
+<p class="price">$25.00</p>
+<label>Size <select><option>S</option><option disabled>M (sold out)</option></select></label>
+</body>
+</html>
