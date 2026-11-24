@@ -1,0 +1,63 @@
+{
+  "name": "schemaview",
+  "version": "1.0.0",
+  "description": "Validate JSON-LD structured data (schema.org) in HTML pages against the properties Google documents for each rich result, with line numbers. Offline, plus a CLI for files, URLs and CI.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "websync-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "schemaview": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --conditions=websync-source --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "dependencies": {
+    "metacheck": "^1.0.0"
+  },
+  "keywords": [
+    "schema.org",
+    "json-ld",
+    "structured-data",
+    "rich-results",
+    "rich-snippets",
+    "validator",
+    "lint",
+    "linter",
+    "seo",
+    "technical-seo",
+    "google",
+    "cli"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://github.com/idrisiRehan/websync-plugins/tree/main/packages/schemaview#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/schemaview"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://news.example.com/#org",
+      "name": "Example News",
+      "url": "https://news.example.com/",
+      "logo": "https://news.example.com/logo.png",
+      "sameAs": ["https://www.linkedin.com/company/example-news"],
+      "description": "Independent reporting on cities and transport."
+    },
+    {
+      "@type": "Person",
+      "@id": "https://news.example.com/staff/asha-rao#person",
+      "name": "Asha Rao",
+      "url": "https://news.example.com/staff/asha-rao"
+    },
+    {
+      "@type": "NewsArticle",
+      "@id": "https://news.example.com/2026/11/new-tram-line#article",
+      "headline": "City approves a new tram line to the airport",
+      "image": [
+        "https://news.example.com/img/tram-16x9.jpg",
+        "https://news.example.com/img/tram-4x3.jpg",
+        "https://news.example.com/img/tram-1x1.jpg"
+      ],
+      "datePublished": "2026-11-20T08:00:00+05:30",
+      "dateModified": "2026-11-21T10:15:00+05:30",
+      "author": { "@id": "https://news.example.com/staff/asha-rao#person" },
+      "publisher": { "@id": "https://news.example.com/#org" },
+      "mainEntityOfPage": "https://news.example.com/2026/11/new-tram-line"
+    }
+  ]
+}
