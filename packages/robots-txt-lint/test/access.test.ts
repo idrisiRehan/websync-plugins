@@ -228,7 +228,22 @@ describe("AI crawlers", () => {
       assert.ok(["training", "search", "user", "dataset"].includes(c.purpose), c.token);
       assert.match(c.source, /^https:\/\//, c.token);
       assert.match(c.checked, /^\d{4}-\d{2}-\d{2}$/, c.token);
+      if (c.userAgent !== null) assert.match(c.userAgent, /^[A-Za-z0-9_-]+$/, c.token);
+      if (c.ipRanges !== null) assert.match(c.ipRanges, /^https:\/\/[^\s]+$/, c.token);
     }
+  });
+
+  test("control tokens that never crawl have no user agent and no IP list", () => {
+    const robotsOnly = AI_CRAWLERS.filter((c) => c.userAgent === null).map((c) => c.token);
+    assert.deepEqual(robotsOnly, ["Google-Extended", "Applebot-Extended"]);
+    for (const c of AI_CRAWLERS.filter((c) => c.userAgent === null)) assert.equal(c.ipRanges, null, c.token);
+  });
+
+  test("records which operators publish IP lists, as their pages say", () => {
+    const unlisted = AI_CRAWLERS.filter((c) => c.userAgent !== null && c.ipRanges === null).map((c) => c.token);
+    assert.deepEqual(unlisted, ["meta-externalagent", "meta-webindexer", "meta-externalfetcher", "MistralAI-Training"]);
+    const anthropic = new Set(AI_CRAWLERS.filter((c) => c.operator === "Anthropic").map((c) => c.ipRanges));
+    assert.deepEqual([...anthropic], ["https://claude.com/crawling/bots.json"]);
   });
 
   test("reports blocked, partial and allowed with the group that applied", () => {

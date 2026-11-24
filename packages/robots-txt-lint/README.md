@@ -308,6 +308,8 @@ interface AiCrawler {
   source: string;             // the operator's documentation
   checked: string;            // date last compared with source, YYYY-MM-DD
   note?: string;              // what the operator says changes how robots.txt applies
+  userAgent: string | null;   // the name its User-Agent header carries; null for a control token
+  ipRanges: string | null;    // the operator's list of the crawler's IP addresses, or null
 }
 
 interface AiCrawlerAccess extends AiCrawler {
@@ -465,6 +467,13 @@ needs rechecking every quarter**; each entry's `source` and `checked` fields mak
 | `MistralAI-User` | Mistral AI | user | [Mistral robots](https://docs.mistral.ai/robots) |
 | `DuckAssistBot` | DuckDuckGo | search | [DuckAssistBot](https://duckduckgo.com/duckduckgo-help-pages/results/duckassistbot) |
 | `CCBot` | Common Crawl | dataset | [CCBot](https://commoncrawl.org/ccbot) |
+
+Each entry also has `userAgent`, the name the crawler's User-Agent header carries (null for
+`Google-Extended` and `Applebot-Extended`, which control robots.txt but send no requests of their
+own), and `ipRanges`, the list of the crawler's IP addresses that the source page links to (null
+for Meta's crawlers and `MistralAI-Training`, whose pages link to none).
+[ai-crawler-log](https://github.com/idrisiRehan/websync-plugins/tree/main/packages/ai-crawler-log)
+uses both to find these crawlers in access logs and to tell real ones from fakes.
 
 Purposes: `training` collects content that may be used to train models; `search` indexes pages for
 an AI search or answer product; `user` fetches a page when a person asks the assistant to;

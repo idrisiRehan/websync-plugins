@@ -22,7 +22,9 @@ All notable changes to `robots-txt-lint` are recorded here. The format follows
   `Allow` wins ties, `*` and `$`, percent-encoding normalisation, `/robots.txt` always allowed) and
   returns the rule and groups that decided.
 - `aiCrawlerReport()` and the `AI_CRAWLERS` table: 21 AI crawler tokens from 10 operators, each
-  with its operator's documentation URL and the date it was checked.
+  with its operator's documentation URL, the date it was checked, the name its User-Agent header
+  carries (null for control tokens that never crawl) and the IP address list its operator
+  publishes, if any.
 - `robots-txt-lint` CLI for files, stdin and URLs (a bare origin fetches `/robots.txt`, 4xx is
   reported as "no file, crawl everything" per RFC 9309, 5xx exits 2, a 1 MiB read cap), with
   `--test`, `--user-agent`, `--ai`, `--json`, `--max-warnings` and `--timeout`.

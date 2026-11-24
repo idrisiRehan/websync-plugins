@@ -1,0 +1,68 @@
+{
+  "name": "ai-crawler-log",
+  "version": "1.0.0",
+  "description": "See which AI crawlers read your site from your own access logs: requests per crawler, the pages and products they fetch, the errors they get, and which claimed crawlers are fakes, checked against the IP lists their operators publish. No third-party dependencies.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "websync-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "ai-crawler-log": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --conditions=websync-source --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "ai-crawlers",
+    "access-log",
+    "log-analyzer",
+    "nginx",
+    "apache",
+    "cloudflare",
+    "gptbot",
+    "claudebot",
+    "perplexitybot",
+    "bot-verification",
+    "fake-bots",
+    "crawler",
+    "seo",
+    "shopify",
+    "woocommerce",
+    "cli"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://github.com/idrisiRehan/websync-plugins/tree/main/packages/ai-crawler-log#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/ai-crawler-log"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  },
+  "dependencies": {
+    "redirect-inspector": "^1.0.0",
+    "robots-txt-lint": "^1.0.0"
+  }
+}
