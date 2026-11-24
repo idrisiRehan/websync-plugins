@@ -1,0 +1,63 @@
+{
+  "name": "metacheck",
+  "version": "1.0.0",
+  "description": "Lint a page's SEO and sharing metadata offline: title, description, canonical, robots, Open Graph, X cards, headings and hreflang, with line numbers. Zero dependencies, plus a CLI for files, stdin and URLs.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "websync-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "metacheck": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.ts",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "seo",
+    "meta-tags",
+    "metadata",
+    "open-graph",
+    "opengraph",
+    "twitter-card",
+    "canonical",
+    "hreflang",
+    "robots",
+    "html",
+    "lint",
+    "linter",
+    "validator",
+    "technical-seo",
+    "cli"
+  ],
+  "author": "Rehan Idrisi (https://websync.in/about/)",
+  "license": "MIT",
+  "homepage": "https://websync.in/tools/seo-analyzer/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idrisiRehan/websync-plugins.git",
+    "directory": "packages/metacheck"
+  },
+  "bugs": {
+    "url": "https://github.com/idrisiRehan/websync-plugins/issues"
+  }
+}
